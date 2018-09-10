@@ -1,10 +1,10 @@
-# angler
+# Angler
 
-FIXME: description
+Angler - a probabilistic programming language
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Download from https://github.com/mrordinaire/angler.
 
 ## Usage
 
@@ -30,7 +30,7 @@ FIXME: listing of options this app accepts.
 
 ## License
 
-Copyright © 2018 FIXME
+Copyright © 2018 Do Nhat Minh
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
