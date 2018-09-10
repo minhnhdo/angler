@@ -33,5 +33,9 @@
   [& args]
   (let [{:keys [options arguments]} (process-options (parse-opts args cli-options))]
     (doseq [f arguments]
-      (with-open [r (java.io.PushbackReader.  (if (= "-" f) *in* (io/reader f)))]
-        (parse r)))))
+      (let [parse-result (with-open [r (java.io.PushbackReader.  (if (= "-" f) *in* (io/reader f)))]
+                           (parse r))]
+        (if (:error parse-result)
+          (do (println (:message parse-result))
+              (System/exit 2))
+          (println parse-result))))))
