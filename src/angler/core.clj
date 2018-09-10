@@ -1,8 +1,8 @@
 (ns angler.core
-  (:require [clojure.edn :as edn]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [clojure.string :as string]
-            [clojure.tools.cli :refer [parse-opts]])
+            [clojure.tools.cli :refer [parse-opts]]
+            [angler.passes.parse :refer [parse]])
   (:gen-class))
 
 (def cli-options
@@ -34,9 +34,4 @@
   (let [{:keys [options arguments]} (process-options (parse-opts args cli-options))]
     (doseq [f arguments]
       (with-open [r (java.io.PushbackReader.  (if (= "-" f) *in* (io/reader f)))]
-        (println
-          (loop [exps []]
-            (let [e (edn/read {:readers {}, :eof ::done} r)]
-              (if (= ::done e)
-                exps
-                (recur (conj exps e))))))))))
+        (parse r)))))
