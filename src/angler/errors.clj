@@ -12,11 +12,11 @@
             rev-checks)))
 
 (defn parse-error
-  [message]
+  [& args]
   {:error ::parse-error
-   :message message})
+   :message (str args)})
 
 (defn read-error
   [message]
   {:error ::read-error
-   :message message})
+   :message (str args)})
