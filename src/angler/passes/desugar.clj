@@ -23,6 +23,22 @@
             desugared-body
             reversed-desugared-bindings)))
 
+(defn- desugar-loop
+  [expr]
+  (let [[_ c e f & body] expr
+        as (repeatedly (count body) gensym)
+        vs (repeatedly c gensym)
+        calls (rseq (mapv #(vector %1 (apply list f %2 %3 as))
+                          vs
+                          (range c)
+                          (cons e vs)))
+        vlast (nth (nth calls 0) 0)]
+    (desugar-let
+      (list 'let (vec (interleave as body))
+            (reduce #(list 'let %2 %1)
+                    vlast
+                    calls)))))
+
 (defn- desugar-foreach
   [e]
   (let [[_ c bindings & body] e
@@ -46,6 +62,7 @@
                        (nth desugared-params 2))
       (= 'let op) (desugar-let e)
       (= 'foreach op) (desugar-foreach e)
+      (= 'loop op) (desugar-loop e)
       :else (apply list op desugared-params))))
 
 (defn- desugar-vector

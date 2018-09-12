@@ -58,9 +58,9 @@
                               \newline (map :angler.errors/message errors)))))))
       (= 'foreach op) (let [[c bindings & body] validated-params]
                         (checks
-                          [(and (int? c) (>= c 0))
+                          [(and (int? c) (> c 0))
                            (validate-error
-                             "Expected non-negative integer, found "
+                             "Expected positive integer, found "
                              (class c) "\n"
                              (prettify c))
 
@@ -84,6 +84,19 @@
                               (validate-error
                                 (string/join
                                   \newline (map :angler.errors/message errors)))))))
+      (= 'loop op) (let [[c e f & body] validated-params]
+                     (checks
+                       [(and (int? c) (> c 0))
+                        (validate-error
+                          "Expected positive integer, found "
+                          (class c) "\n"
+                          (prettify c))
+
+                        (not (:angler.errors/error (validate-identifier f)))
+                        (validate-error
+                          "Expected function name, found " (class f) "\n"
+                          (prettify f))]
+                       ast))
       :else (let [validated-op (validate-identifier op)]
               (if (not (:angler.errors/error validated-op))
                 ast
