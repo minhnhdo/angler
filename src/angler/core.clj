@@ -3,6 +3,7 @@
             [clojure.pprint :refer [pprint]]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
+            [angler.errors :refer [checked-pipeline->]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.validate :refer [validate]])
@@ -32,6 +33,10 @@
     (nil? (seq arguments)) (assoc parsed-options :arguments ["-"])
     :else parsed-options))
 
+(defn check-error
+  [r]
+  (not (:angler.errors/error r)))
+
 (defn -main
   [& args]
   (let [{:keys [options arguments]} (process-options (parse-opts args cli-options))]
@@ -39,8 +44,12 @@
       (let [parse-result (with-open [r (if (= "-" f)
                                          *in*
                                          (java.io.PushbackReader. (io/reader f)))]
-                           (parse r))]
+                           (parse r))
+            output (checked-pipeline->
+                     parse-result
+                     check-error validate
+                     check-error desugar)]
         (if (:angler.errors/error parse-result)
           (do (println (:angler.errors/message parse-result))
               (System/exit 2))
-          (pprint (desugar (validate parse-result))))))))
+          (pprint output))))))

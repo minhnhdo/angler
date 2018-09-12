@@ -11,6 +11,41 @@
             success-result
             rev-checks)))
 
+(defmacro checked-pipeline->
+  "Usage: (checked-pipeline-> expr check-and-operate*)
+
+  check-and-operate => check operate
+
+  Example:
+  (checked-pipeline->
+    1
+    (> 0) (+ 1)
+    even? (+ 1))
+  will expand to
+  (let [a 1]
+    (if (> a 1)
+      (let [a (+ a 1)]
+        (if (even? a)
+          (let [a (+ a 1)]
+            a)
+          a))
+      a))"
+  [expr & checks-and-operates]
+  (let [fresh (gensym)
+        rev-checks (rseq (vec checks-and-operates))]
+    (list 'let [fresh expr]
+          (nth
+            (reduce (fn [[is-let r] op]
+                      (let [action (if (and (list? op) (not (nil? (first op))))
+                                     (apply list (first op) fresh (rest op))
+                                     (list op fresh))]
+                        (if is-let
+                          [false (list 'let [fresh action] r)]
+                          [true (list 'if action r fresh)])))
+                    [true fresh]
+                    rev-checks)
+            1))))
+
 (defn validate-error
   [& args]
   {::error ::validate-error
