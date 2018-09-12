@@ -11,12 +11,12 @@
             success-result
             rev-checks)))
 
-(defn parse-error
+(defn validate-error
   [& args]
-  {:error ::parse-error
-   :message (str args)})
+  {::error ::validate-error
+   ::message (apply str args)})
 
 (defn read-error
-  [message]
-  {:error ::read-error
-   :message (str args)})
+  [& args]
+  {::error ::read-error
+   ::message (apply str args)})

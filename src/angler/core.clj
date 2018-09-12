@@ -1,8 +1,10 @@
 (ns angler.core
   (:require [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
-            [angler.passes.parse :refer [parse]])
+            [angler.passes.parse :refer [parse]]
+            [angler.passes.validate :refer [validate]])
   (:gen-class))
 
 (def cli-options
@@ -37,8 +39,7 @@
                                          *in*
                                          (java.io.PushbackReader. (io/reader f)))]
                            (parse r))]
-        (if (:error parse-result)
-          (do (println (:message parse-result))
+        (if (:angler.errors/error parse-result)
+          (do (println (:angler.errors/message parse-result))
               (System/exit 2))
-          (println parse-result)))
-      (System/exit 0))))
+          (pprint (validate parse-result)))))))
