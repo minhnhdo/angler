@@ -23,6 +23,19 @@
             desugared-body
             reversed-desugared-bindings)))
 
+(defn- desugar-foreach
+  [e]
+  (let [[_ c bindings & body] e
+        partitioned-bindings (partition 2 bindings)]
+    (apply list 'vector
+           (for [i (range c)]
+             (desugar-let
+               (apply list 'let (vec (mapcat #(let [v (nth % 0)
+                                                    e (nth % 1)]
+                                                [v (list 'get e i)])
+                                             partitioned-bindings))
+                      body))))))
+
 (defn- desugar-list
   [e]
   (let [[op & params] e
@@ -32,6 +45,7 @@
                        (nth desugared-params 1)
                        (nth desugared-params 2))
       (= 'let op) (desugar-let e)
+      (= 'foreach op) (desugar-foreach e)
       :else (apply list op desugared-params))))
 
 (defn- desugar-vector

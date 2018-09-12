@@ -38,13 +38,40 @@
                     (checks
                       [(vector? bindings)
                        (validate-error
-                         "Expected bindings as a vector\n" (prettify ast))
+                         "Expected bindings as a vector\n" (prettify bindings))
 
                        (= 0 (mod (count bindings) 2))
                        (validate-error
                          "Expected even number of elements in binding vector\n"
-                         (prettify ast))]
+                         (prettify bindings))]
                       (let [validated-bindings (map #(vector (validate-identifier (nth % 0))
+                                                             (validate-expression (nth % 1)))
+                                                    (partition 2 bindings))
+                            validated-body (map validate-expression body)
+                            errors (filter :angler.errors/error
+                                           (concat (flatten validated-bindings)
+                                                   validated-body))]
+                        (if (empty? errors)
+                          ast
+                          (validate-error
+                            (string/join
+                              \newline (map :angler.errors/message errors)))))))
+      (= 'foreach op) (let [[c bindings & body] validated-params]
+                        (checks
+                          [(int? c)
+                           (validate-error "Expected integer, found "
+                                           (class c) "\n"
+                                           (prettify c))
+
+                           (vector? bindings)
+                           (validate-error "Expected bindings as a vector\n"
+                                           (prettify bindings))
+
+                           (= 0 (mod (count bindings) 2))
+                           (validate-error
+                             "Expected even number of elements in binding vector\n"
+                             (prettify bindings))]
+                          (let [validated-bindings (map #(vector (validate-identifier (nth % 0))
                                                              (validate-expression (nth % 1)))
                                                     (partition 2 bindings))
                             validated-body (map validate-expression body)
