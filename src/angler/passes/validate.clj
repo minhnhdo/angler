@@ -3,6 +3,8 @@
             [clojure.string :as string]
             [angler.errors :refer [checks validate-error]]))
 
+(def keywords #{'defn 'foreach 'if 'let 'loop})
+
 (defn- prettify
   [ast]
   (with-out-str (pprint ast)))
@@ -15,7 +17,7 @@
        "Expected identifier, found " (class identifier) "\n"
        (prettify identifier))
 
-     (not (contains? #{'if 'let} identifier))
+     (not (contains? keywords identifier))
      (validate-error "Expected identifier, found " (prettify identifier))]
 
     identifier))
