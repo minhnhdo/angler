@@ -58,10 +58,11 @@
                               \newline (map :angler.errors/message errors)))))))
       (= 'foreach op) (let [[c bindings & body] validated-params]
                         (checks
-                          [(int? c)
-                           (validate-error "Expected integer, found "
-                                           (class c) "\n"
-                                           (prettify c))
+                          [(and (int? c) (>= c 0))
+                           (validate-error
+                             "Expected non-negative integer, found "
+                             (class c) "\n"
+                             (prettify c))
 
                            (vector? bindings)
                            (validate-error "Expected bindings as a vector\n"
@@ -72,17 +73,17 @@
                              "Expected even number of elements in binding vector\n"
                              (prettify bindings))]
                           (let [validated-bindings (map #(vector (validate-identifier (nth % 0))
-                                                             (validate-expression (nth % 1)))
-                                                    (partition 2 bindings))
-                            validated-body (map validate-expression body)
-                            errors (filter :angler.errors/error
-                                           (concat (flatten validated-bindings)
-                                                   validated-body))]
-                        (if (empty? errors)
-                          ast
-                          (validate-error
-                            (string/join
-                              \newline (map :angler.errors/message errors)))))))
+                                                                 (validate-expression (nth % 1)))
+                                                        (partition 2 bindings))
+                                validated-body (map validate-expression body)
+                                errors (filter :angler.errors/error
+                                               (concat (flatten validated-bindings)
+                                                       validated-body))]
+                            (if (empty? errors)
+                              ast
+                              (validate-error
+                                (string/join
+                                  \newline (map :angler.errors/message errors)))))))
       :else (let [validated-op (validate-identifier op)]
               (if (not (:angler.errors/error validated-op))
                 ast
