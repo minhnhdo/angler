@@ -3,6 +3,7 @@
             [clojure.pprint :refer [pprint]]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
+            [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.validate :refer [validate]])
   (:gen-class))
@@ -42,4 +43,4 @@
         (if (:angler.errors/error parse-result)
           (do (println (:angler.errors/message parse-result))
               (System/exit 2))
-          (pprint (validate parse-result)))))))
+          (pprint (desugar (validate parse-result))))))))

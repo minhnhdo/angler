@@ -25,7 +25,7 @@
 (defn- validate-list
   [ast]
   (let [op (first ast)
-        validated-params (vec (map validate-expression (rest ast)))
+        validated-params (mapv validate-expression (rest ast))
         errors (filter :angler.errors/error validated-params)]
     (cond
       (seq errors) (validate-error
