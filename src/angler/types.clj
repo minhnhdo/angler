@@ -15,6 +15,10 @@
    ^clojure.lang.IPersistentMap P
    ^clojure.lang.IPersistentMap Y])
 
+(defn graph?
+  [obj]
+  (instance? Graph obj))
+
 (defn new-graph
   ^Graph
   [^clojure.lang.IPersistentSet V
