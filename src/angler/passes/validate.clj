@@ -1,7 +1,6 @@
 (ns angler.passes.validate
   (:require [clojure.pprint :refer [pprint]]
             [clojure.string :as string]
-            [angler.built-ins :refer [built-ins]]
             [angler.errors :refer [checks validate-error]]))
 
 (defn- prettify
@@ -9,7 +8,7 @@
   (with-out-str (pprint ast)))
 
 (defn- validate-identifier
-  [bound-syms identifier]
+  [identifier]
   (checks
     [(symbol? identifier)
      (validate-error
@@ -21,9 +20,9 @@
 (declare validate-expression)
 
 (defn- validate-list
-  [bound-syms ast]
+  [ast]
   (let [op (first ast)
-        validated-params (mapv #(validate-expression bound-syms %) (rest ast))
+        validated-params (mapv validate-expression (rest ast))
         errors (filter :angler.errors/error validated-params)]
     (cond
       (seq errors) (validate-error
@@ -43,12 +42,10 @@
                          "Expected even number of elements in binding vector\n"
                          (prettify bindings))]
                       (let [validated-bindings
-                            (map #(vector (validate-identifier bound-syms
-                                                               (nth % 0))
-                                          (validate-expression bound-syms
-                                                               (nth % 1)))
+                            (map #(vector (validate-identifier (nth % 0))
+                                          (validate-expression (nth % 1)))
                                  (partition 2 bindings))
-                            validated-body (map #(validate-expression bound-syms %) body)
+                            validated-body (map validate-expression body)
                             errors (filter :angler.errors/error
                                            (concat (flatten validated-bindings)
                                                    validated-body))]
@@ -75,13 +72,11 @@
                              (prettify bindings))]
                           (let [validated-bindings
                                 (map #(vector
-                                        (validate-identifier bound-syms
-                                                             (nth % 0))
-                                        (validate-expression bound-syms
-                                                             (nth % 1)))
+                                        (validate-identifier (nth % 0))
+                                        (validate-expression (nth % 1)))
                                      (partition 2 bindings))
                                 validated-body
-                                (map #(validate-expression bound-syms %) body)
+                                (map validate-expression body)
                                 errors (filter :angler.errors/error
                                                (concat (flatten validated-bindings)
                                                        validated-body))]
@@ -99,23 +94,19 @@
                           (prettify c))
 
                         (not (:angler.errors/error
-                               (validate-identifier bound-syms f)))
+                               (validate-identifier f)))
                         (validate-error
                           "Expected function name, found " (class f) "\n"
                           (prettify f))]
                        ast))
-      :else (let [validated-op (validate-identifier bound-syms op)]
-              (checks
-                [(not (:angler.errors/error validated-op)) validated-op
-
-                 (or (bound-syms validated-op) (resolve validated-op))
-                 (validate-error "Unknown procedure " validated-op "\n"
-                                 (prettify op))]
+      :else (let [validated-op (validate-identifier op)]
+              (if (:angler.errors/error validated-op)
+                validated-op
                 ast)))))
 
 (defn- validate-vector
-  [bound-syms ast]
-  (let [contents (map #(validate-expression bound-syms %) ast)
+  [ast]
+  (let [contents (map validate-expression ast)
         errors (filter :angler.errors/error contents)]
     (if (empty? errors)
       ast
@@ -123,8 +114,8 @@
         (string/join \newline (map :angler.errors/message errors))))))
 
 (defn- validate-map
-  [bound-syms ast]
-  (let [pairs (map #(validate-expression bound-syms %) ast)
+  [ast]
+  (let [pairs (map validate-expression ast)
         errors (filter :angler.errors/error pairs)]
     (if (empty? errors)
       ast
@@ -132,16 +123,16 @@
         (string/join \newline (map :angler.errors/message errors))))))
 
 (defn- validate-expression
-  [bound-syms ast]
+  [ast]
   (cond
-    (and (list? ast) (seq ast)) (validate-list bound-syms ast)
-    (vector? ast) (validate-vector bound-syms ast)
-    (map? ast) (validate-map bound-syms ast)
-    (symbol? ast) (validate-identifier bound-syms ast)
+    (and (list? ast) (seq ast)) (validate-list ast)
+    (vector? ast) (validate-vector ast)
+    (map? ast) (validate-map ast)
+    (symbol? ast) (validate-identifier ast)
     :else ast))
 
 (defn- validate-defn
-  [bound-syms ast]
+  [ast]
   (checks
     [(list? ast) (validate-error "Unexpected " (class ast) " for defn in\n"
                                  (prettify ast))]
@@ -150,7 +141,7 @@
         [(= 'defn defn-kw)
          (validate-error "Expected defn, found " defn-kw "\n" (prettify ast))
 
-         (not (:angler.errors/error (validate-identifier bound-syms fn-name)))
+         (not (:angler.errors/error (validate-identifier fn-name)))
          (validate-error "Expected function name as a symbol, found "
                          (class fn-name) "\n" (prettify ast))
 
@@ -159,14 +150,13 @@
            "Expected vector of arguments, found " (class arguments) "\n"
            (prettify ast))
 
-         (every? #(not (:angler.errors/error
-                         (validate-identifier bound-syms %)))
+         (every? #(not (:angler.errors/error (validate-identifier %)))
                  arguments)
          (validate-error "Expected arguments to be symbols\n" (prettify ast))
 
          (nil? more)
          (validate-error "Unexpected " more "\n" (prettify ast))]
-        (let [validated-exp (validate-expression bound-syms body)]
+        (let [validated-exp (validate-expression body)]
           (if (:angler.errors/error validated-exp)
             (validate-error "Found below error while parsing body of "
                             fn-name "\n"
@@ -177,22 +167,14 @@
   [exps]
   (checks
     [(seq exps) (validate-error "Empty program")]
-    (let [[bound-syms validated-defns]
-          (reduce (fn [[bound-syms validated-defns] exp]
-                    (let [validated-defn (validate-defn bound-syms exp)]
-                      [(if (:angler.errors/error validated-defn)
-                         bound-syms
-                         (assoc bound-syms (second validated-defn) validated-defn))
-                       (conj validated-defns validated-defn)]))
-                  [built-ins []]
-                  (pop exps))
-          validated-exp (validate-expression bound-syms (peek exps))
-          errors (concat (filter :angler.errors/error validated-defns)
-                         (if (:angler.errors/error validated-exp) [validated-exp] []))]
+    (let [validated-defns (map validate-defn (pop exps))
+          validated-exp (validate-expression (peek exps))
+          errors (filter :angler.errors/error
+                         (concat validated-defns [validated-exp]))]
       (checks
         [(empty? errors)
-         (validate-error (string/join \newline
-                                      (map :angler.errors/message errors)))]
+         (validate-error
+           (string/join \newline (map :angler.errors/message errors)))]
         exps))))
 
 (defn validate
