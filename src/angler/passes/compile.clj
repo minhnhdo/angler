@@ -1,11 +1,29 @@
 (ns angler.passes.compile
-  (:require [clojure.set :refer [intersection]]
+  (:require [clojure.set :refer [difference intersection union]]
             [angler.errors :refer [checks]]
+            [angler.passes.scope :refer [built-ins]]
             [angler.types :refer [empty-graph join-graph pmf new-graph]]))
 
+(declare free-vars)
+
+(defn- free-vars-list
+  [list-exp]
+  (let [[op & params] list-exp]
+    (if (= 'let op)
+      (let [[[v e] body] params]
+        (difference (union (free-vars e) (free-vars body)) v))
+      (apply union (map free-vars list-exp)))))
+
 (defn free-vars
-  [ast]
-  #{})
+  [procs ast]
+  (cond
+    (and (list? ast) (seq ast)) (free-vars-list ast)
+    (symbol? ast) (if (or (contains? procs ast)
+                          (contains? built-ins ast)
+                          (resolve ast))
+                    #{}
+                    #{ast})
+    :else #{}))
 
 (defn- score
   [exp v]
@@ -52,10 +70,10 @@
   (let [[_ e] sample-exp
         [{:keys [V A P Y]} compiled-e] (compile-expression sub procs pred e)
         v (gensym)
-        Z (intersection (free-vars compiled-e) V)
+        Z (intersection (free-vars procs compiled-e) V)
         F (score compiled-e v)]
     [(new-graph (conj V v)
-                (into A (map #(vector z v) Z))
+                (into A (map #(vector % v) Z))
                 (assoc P v F)
                 Y)
      v]))
@@ -77,5 +95,7 @@
     :else [(empty-graph) e]))
 
 (defn compile-to-graph
-  [procs pred e]
-  (compile-expression {} procs pred e))
+  [program]
+  (let [procs (into {} (map #(vector (second %) %)) (pop program))
+        exp (peek program)]
+    (compile-expression procs true exp)))

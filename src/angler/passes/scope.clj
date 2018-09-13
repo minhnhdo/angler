@@ -3,7 +3,7 @@
             [angler.errors :refer [checks scope-error]]
             [angler.types :refer [distributions]]))
 
-(def ^:private built-ins
+(def built-ins
   (into #{'if 'loop 'observe 'sample} distributions))
 
 (defn- scope-identifier
