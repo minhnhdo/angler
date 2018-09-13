@@ -99,6 +99,20 @@
                           "Expected function name, found " (class f) "\n"
                           (prettify f))]
                        ast))
+      (= 'sample op) (checks
+                       [(= 1 (count validated-params))
+                        (validate-error
+                          "Expected 1 argument to sample, found "
+                          (count validated-params) "\n"
+                          (prettify ast))]
+                       ast)
+      (= 'observe op) (checks
+                        [(= 2 (count validated-params))
+                         (validate-error
+                           "Expected 2 arguments to observe, found "
+                           (count validated-params)
+                           (prettify ast))]
+                        ast)
       :else (let [validated-op (validate-identifier op)]
               (if (:angler.errors/error validated-op)
                 validated-op
