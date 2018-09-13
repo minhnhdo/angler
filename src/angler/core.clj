@@ -3,7 +3,7 @@
             [clojure.pprint :refer [pprint]]
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
-            [angler.errors :refer [checked-pipeline->]]
+            [angler.errors :refer [checked->]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
@@ -46,7 +46,7 @@
                                          *in*
                                          (java.io.PushbackReader. (io/reader f)))]
                            (parse r))
-            output (checked-pipeline->
+            output (checked->
                      parse-result
                      check-error validate
                      check-error scope

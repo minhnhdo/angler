@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.test :refer :all]
             [angler.core :refer [check-error]]
-            [angler.errors :refer [checked-pipeline->]]
+            [angler.errors :refer [checked->]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
@@ -14,7 +14,7 @@
       (testing (str "Validating, scoping and desugaring " filename " twice")
         (let [parse-result (with-open [r (java.io.PushbackReader. (io/reader (io/resource filename)))]
                 (parse r))
-              output (checked-pipeline->
+              output (checked->
                        parse-result
                        check-error validate
                        check-error scope

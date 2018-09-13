@@ -11,13 +11,13 @@
             success-result
             rev-checks)))
 
-(defmacro checked-pipeline->
-  "Usage: (checked-pipeline-> expr check-and-operate*)
+(defmacro checked->
+  "Usage: (checked-> expr check-and-operate*)
 
   check-and-operate => check operate
 
   Example:
-  (checked-pipeline->
+  (checked->
     1
     (> 0) (+ 1)
     even? (+ 1))
