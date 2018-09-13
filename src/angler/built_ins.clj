@@ -18,4 +18,10 @@
 (defn normal
   [])
 
-(def built-ins #{'bernoulli 'beta 'exp 'normal 'observe 'sample})
+(def built-ins
+  {'bernoulli bernoulli
+   'beta beta
+   'exp exp
+   'normal normal
+   'observe observe
+   'sample sample})
