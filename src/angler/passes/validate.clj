@@ -139,7 +139,7 @@
 (defn- validate-expression
   [bound-syms ast]
   (cond
-    (list? ast) (validate-list bound-syms ast)
+    (and (list? ast) (seq ast)) (validate-list bound-syms ast)
     (vector? ast) (validate-vector bound-syms ast)
     (map? ast) (validate-map bound-syms ast)
     (symbol? ast) (validate-identifier bound-syms ast)

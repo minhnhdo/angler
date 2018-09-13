@@ -76,7 +76,7 @@
 (defn- desugar-expression
   [e]
   (cond
-    (list? e) (desugar-list e)
+    (and (list? e) (seq e)) (desugar-list e)
     (vector? e) (desugar-vector e)
     (map? e) (desugar-map e)
     :else e))
