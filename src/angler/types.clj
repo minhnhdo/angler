@@ -8,6 +8,7 @@
    ^clojure.lang.IPersistentMap Y])
 
 (defn empty-graph
+  ^Graph
   []
   (Graph. #{} #{} {} {}))
 
