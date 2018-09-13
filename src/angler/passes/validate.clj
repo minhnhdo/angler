@@ -4,8 +4,6 @@
             [angler.built-ins :refer [built-ins]]
             [angler.errors :refer [checks validate-error]]))
 
-(def keywords #{'defn 'foreach 'if 'let 'loop})
-
 (defn- prettify
   [ast]
   (with-out-str (pprint ast)))
@@ -16,10 +14,7 @@
     [(symbol? identifier)
      (validate-error
        "Expected identifier, found " (class identifier) "\n"
-       (prettify identifier))
-
-     (not (contains? keywords identifier))
-     (validate-error "Expected identifier, found " (prettify identifier))]
+       (prettify identifier))]
 
     identifier))
 
