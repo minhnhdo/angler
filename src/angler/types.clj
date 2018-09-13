@@ -1,6 +1,14 @@
 (ns angler.types
   (:require clojure.set))
 
+(def pmf
+  {'bernoulli 'p_bernoulli
+   'beta 'p_beta
+   'exp 'p_exp
+   'normal 'p_normal})
+
+(def distributions (set (keys pmf)))
+
 (defrecord Graph
   [^clojure.lang.IPersistentSet V
    ^clojure.lang.IPersistentSet A

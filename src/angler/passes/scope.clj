@@ -1,9 +1,10 @@
 (ns angler.passes.scope
   (:require [clojure.string :as string]
-            [angler.errors :refer [checks scope-error]]))
+            [angler.errors :refer [checks scope-error]]
+            [angler.types :refer [distributions]]))
 
 (def ^:private built-ins
-  #{'if 'loop 'bernoulli 'beta 'exp 'normal 'observe 'sample})
+  (into #{'if 'loop 'observe 'sample} distributions))
 
 (defn- scope-identifier
   [bound-syms identifier]
