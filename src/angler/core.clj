@@ -6,6 +6,7 @@
             [angler.errors :refer [checked-pipeline->]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
+            [angler.passes.scope :refer [scope]]
             [angler.passes.validate :refer [validate]])
   (:gen-class))
 
@@ -48,6 +49,7 @@
             output (checked-pipeline->
                      parse-result
                      check-error validate
+                     check-error scope
                      check-error desugar)]
         (if (:angler.errors/error parse-result)
           (do (println (:angler.errors/message parse-result))

@@ -1,5 +1,5 @@
 (defn regr-step [n r2 xs ys slope intercept]
-  (let [x (get xn n)
+  (let [x (get xs n)
         y (get ys n)
         fx (+ (* slope x) intercept)
         r (- y fx)]

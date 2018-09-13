@@ -46,12 +46,17 @@
                     rev-checks)
             1))))
 
-(defn validate-error
-  [& args]
-  {::error ::validate-error
-   ::message (apply str args)})
-
 (defn read-error
   [& args]
   {::error ::read-error
+   ::message (apply str args)})
+
+(defn scope-error
+  [& args]
+  {::error ::scope-error
+   ::message (apply str args)})
+
+(defn validate-error
+  [& args]
+  {::error ::validate-error
    ::message (apply str args)})

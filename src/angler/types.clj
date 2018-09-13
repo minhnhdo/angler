@@ -7,6 +7,14 @@
    ^clojure.lang.IPersistentMap P
    ^clojure.lang.IPersistentMap Y])
 
+(defn new-graph
+  ^Graph
+  [^clojure.lang.IPersistentSet V
+   ^clojure.lang.IPersistentSet A
+   ^clojure.lang.IPersistentMap P
+   ^clojure.lang.IPersistentMap Y]
+  (Graph. V A P Y))
+
 (defn empty-graph
   ^Graph
   []
