@@ -127,7 +127,8 @@
       (= 'sample op) (compile-sample sub procs pred e)
       (= 'observe op) (compile-observe sub procs pred e)
       (contains? procs op) (compile-procedure-call sub procs pred e)
-      (resolve op) (compile-primitive-call sub procs pred e)
+      (or (contains? pmf op) (resolve op)) (compile-primitive-call
+                                             sub procs pred e)
       :else [(empty-graph) e])))
 
 (defn- compile-expression

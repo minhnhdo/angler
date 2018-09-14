@@ -1,5 +1,5 @@
 (ns angler.types
-  (:require clojure.set))
+  (:require [clojure.set :refer [union]]))
 
 (def pmf
   {'bernoulli 'p_bernoulli
@@ -40,8 +40,8 @@
   ([^Graph graph] graph)
 
   ([^Graph graph1 ^Graph graph2]
-   (Graph. (clojure.set/union (:V graph1) (:V graph2))
-           (clojure.set/union (:A graph1) (:A graph2))
+   (Graph. (union (:V graph1) (:V graph2))
+           (union (:A graph1) (:A graph2))
            (merge (:P graph1) (:P graph2))
            (merge (:Y graph1) (:Y graph2))))
 
