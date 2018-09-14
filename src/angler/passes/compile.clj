@@ -78,6 +78,25 @@
                 Y)
      v]))
 
+(defn- compile-observe
+  [sub procs pred observe-exp]
+  (let [[_ e1 e2] observe-exp
+        [graph-e1 compiled-e1] (compile-expression sub procs pred e1)
+        [graph-e2 compiled-e2] (compile-expression sub procs pred e2)
+        {:keys [V A P Y]} (join-graph graph-e1 graph-e2)
+        v (gensym)
+        F1 (score compiled-e1 v)
+        F (list 'if pred F1 1)
+        Z (intersection (disj (free-vars procs F1) v) V)
+        B (set (map #(vector % v) Z))
+        unexpected-free-vars (intersection (free-vars procs compiled-e2) V)]
+    (if (seq unexpected-free-vars)
+      (throw (RuntimeException.
+               (str "Unexpected free variables " unexpected-free-vars
+                    " in " observe-exp)))
+      [(new-graph (conj V v) (union A B) (assoc P v F) (assoc Y v compiled-e2))
+       compiled-e2])))
+
 (defn- compile-list
   [sub procs pred e]
   (let [[op & params] e]
@@ -85,7 +104,7 @@
       (= 'let op) (compile-let sub procs pred e)
       (= 'if op) (compile-if sub procs pred e)
       (= 'sample op) (compile-sample sub procs pred e)
-      )))
+      (= 'observe op) (compile-observe sub procs pred e))))
 
 (defn- compile-expression
   [sub procs pred e]
