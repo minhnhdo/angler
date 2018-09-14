@@ -40,12 +40,9 @@
 
 (defn- compile-identifier
   [sub procs pred identifier]
-  (loop [graph (empty-graph)
-         current identifier]
-    (if (contains? sub current)
-      (let [[g e] (sub current)]
-        (recur g e))
-      [graph current])))
+  (if (contains? sub identifier)
+    (sub identifier)
+    [(empty-graph) identifier]))
 
 (declare compile-expression)
 
