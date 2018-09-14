@@ -1,6 +1,6 @@
 (ns angler.passes.compile-test
   (:require [clojure.test :refer :all]
-            [angler.passes.compile :refer [free-vars]]
+            [angler.passes.compile :refer [free-vars peval]]
             [angler.passes.desugar :refer [desugar]]))
 
 (deftest no-free-vars-literals
@@ -20,3 +20,8 @@
                         '(let [a 1] (let [b 2] (+ a b c d))) #{'c 'd}}]
     (testing (str "No free vars in " e)
       (is (= expected (free-vars {} (nth (desugar [e]) 0)))))))
+
+(deftest peval-literals
+  (doseq [e [1 1.0 "a" :b]]
+    (testing (str "peval " e " should be " e)
+      (is (= e (peval e))))))

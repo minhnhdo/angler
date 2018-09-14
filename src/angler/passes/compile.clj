@@ -5,6 +5,62 @@
             [angler.types :refer [empty-graph join-graph pmf new-graph]])
   (:import [angler.errors CompileError]))
 
+(def ^:private seq-data-constructors #{'list 'vector})
+
+(def ^:private data-constructors
+  (into seq-data-constructors ['hash-set 'hash-map]))
+
+(defn literal?
+  [exp]
+  (cond
+    (symbol? exp) false
+    (and (list? exp) (seq exp)) (contains? data-constructors (first exp))
+    :else true))
+
+(defn peval
+  [exp]
+  (if (and (list? exp) (seq exp))
+    (let [[op & params] (map peval exp)]
+      (cond
+        (= 'if op)
+        (let [[cond-exp then-exp else-exp] params]
+          (cond
+            (not (literal? cond-exp)) (list 'if cond-exp then-exp else-exp)
+            cond-exp (peval then-exp)
+            :else (peval else-exp)))
+        (and (= 'conj op)
+             (list? (first params)))
+        (let [[[c & elems :as coll] & added] params]
+          (cond
+            (= 'list c) (apply list 'list (concat (reverse added) elems))
+            (= 'vector c) (apply list 'vector (concat elems added))
+            (= 'hash-set c) (apply list 'hash-set (concat elems added))
+            (= 'hash-map c) (if (every? #(and (seq %) (= 2 (count %))) added)
+                              (apply list 'hash-map (concat elems added))
+                              (apply list 'conj params))
+            :else (apply list op params)))
+        (and (= 'peek op)
+             (contains? seq-data-constructors (first params))
+             (empty? (rest params)))
+        (let [[[c :as coll]] params]
+          (if (= 'list c)
+            (last coll)
+            (second coll)))
+        (and (= 'nth op)
+             (contains? seq-data-constructors (first params))
+             (int? (second params))
+             (<= 0 (second params) (- (count (first params)) 2)))
+        (nth (first params) (+ 1 (second params)))
+        (and (= 'get op)
+             (= 'hash-map (first (first params)))
+             (= 2 (count params)))
+        (let [m (eval (first params))]
+          (if (contains? m (second params))
+            (m (second params))
+            (apply list op params)))
+        :else (apply list op params)))
+    exp))
+
 (declare free-vars)
 
 (defn- free-vars-list
