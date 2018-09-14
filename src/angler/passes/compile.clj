@@ -22,6 +22,8 @@
     (let [[op & params] (map peval exp)]
       (cond
         (or (not (symbol? op)) (= 'list op)) (apply list op params)
+        (contains? #{'hash-map 'hash-set 'vector} op)
+        (apply (resolve op) params)
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
@@ -78,10 +80,15 @@
              (int? (second params)))
         (get (first params) (+ 1 (second params)))
 
+        ; try to perform primitive calls
         :else (let [resolved-op (resolve op)]
-                (if (nil? resolved-op)
+                (cond
+                  (and (contains? #{'conj 'cons 'first 'rest 'last} op)
+                       (literal? (first params)))
+                  (apply resolved-op params)
+                  (or (nil? resolved-op) (not (every? literal? params)))
                   (apply list op params)
-                  (apply resolved-op params)))))
+                  :else (apply resolved-op params)))))
     exp))
 
 (declare free-vars)
@@ -165,7 +172,7 @@
         {:keys [V A P Y]} (join-graph graph-e1 graph-e2)
         v (gensym)
         F1 (score compiled-e1 v)
-        F (list 'if pred F1 1)
+        F (peval (list 'if pred F1 1))
         Z (intersection (disj (free-vars procs F1) v) V)
         B (set (map #(vector % v) Z))
         unexpected-free-vars (intersection (free-vars procs compiled-e2) V)]
