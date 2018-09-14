@@ -39,10 +39,12 @@
 
 (defn- compile-identifier
   [sub procs pred identifier]
-  [(empty-graph)
-   (if (contains? sub identifier)
-     (sub identifier)
-     identifier)])
+  (loop [graph (empty-graph)
+         current identifier]
+    (if (contains? sub current)
+      (let [[g e] (sub current)]
+        (recur g e))
+      [graph current])))
 
 (declare compile-expression)
 
@@ -51,7 +53,7 @@
   (let [[_ [v e] body] let-exp
         [graph-e compiled-e] (compile-expression sub procs pred e)
         [graph-body compiled-body]
-        (compile-expression (assoc sub v compiled-e) procs pred body)]
+        (compile-expression (assoc sub v [graph-e compiled-e]) procs pred body)]
     [(join-graph graph-e graph-body) compiled-body]))
 
 (defn- compile-if
@@ -104,7 +106,7 @@
         compiled-results (map #(compile-expression sub procs pred %) params)
         graphs (map #(nth % 0) compiled-results)
         compiled-exps (map #(nth % 1) compiled-results)
-        new-sub (into sub (map #(vector %1 %2) arguments compiled-exps))
+        new-sub (into sub (map #(vector %1  %2) arguments compiled-results))
         [graph-body compiled-body] (compile-expression new-sub procs pred body)]
     [(apply join-graph (concat graphs graph-body))
      compiled-body]))
