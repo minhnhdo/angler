@@ -7,17 +7,17 @@
 (declare free-vars)
 
 (defn- free-vars-list
-  [list-exp]
+  [procs list-exp]
   (let [[op & params] list-exp]
     (if (= 'let op)
       (let [[[v e] body] params]
         (difference (union (free-vars e) (free-vars body)) v))
-      (apply union (map free-vars list-exp)))))
+      (apply union (map #(free-vars procs %) list-exp)))))
 
 (defn free-vars
   [procs ast]
   (cond
-    (and (list? ast) (seq ast)) (free-vars-list ast)
+    (and (list? ast) (seq ast)) (free-vars-list procs ast)
     (symbol? ast) (if (or (contains? procs ast)
                           (contains? built-ins ast)
                           (resolve ast))

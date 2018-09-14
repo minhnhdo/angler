@@ -6,4 +6,4 @@
 (deftest no-free-vars-literals
   (doseq [l [1 1.0 #{1 2 3} ["a"] {:a "a"}]]
     (testing (str "No free vars in " l)
-      (is (= #{} (free-vars {} (desugar [l])))))))
+      (is (= #{} (free-vars {} (nth (desugar [l]) 0)))))))

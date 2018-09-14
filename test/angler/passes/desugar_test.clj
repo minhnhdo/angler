@@ -10,4 +10,4 @@
 (deftest desugared-map
   (testing "Desugared map"
     (is (= (desugar '[{a 1, b 2, c 3}])
-           '[(hash-map [a 1] [b 2] [c 3])]))))
+           '[(hash-map (vector a 1) (vector b 2) (vector c 3))]))))
