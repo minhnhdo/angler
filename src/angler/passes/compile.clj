@@ -97,6 +97,27 @@
       [(new-graph (conj V v) (union A B) (assoc P v F) (assoc Y v compiled-e2))
        compiled-e2])))
 
+(defn- compile-procedure-call
+  [sub procs pred call-exp]
+  (let [[fn-name & params] call-exp
+        [_ _ arguments body] (procs fn-name)
+        compiled-results (map #(compile-expression sub procs pred %) params)
+        graphs (map #(nth % 0) compiled-results)
+        compiled-exps (map #(nth % 1) compiled-results)
+        new-sub (into sub (map #(vector %1 %2) arguments compiled-exps))
+        [graph-body compiled-body] (compile-expression new-sub procs pred body)]
+    [(apply join-graph (concat graphs graph-body))
+     compiled-body]))
+
+(defn- compile-primitive-call
+  [sub procs pred call-exp]
+  (let [[op & params] call-exp
+        compiled-results (map #(compile-expression sub procs pred %) params)
+        graphs (map #(nth % 0) compiled-results)
+        compiled-exps (map #(nth % 1) compiled-results)]
+    [(apply join-graph graphs)
+     (apply list op compiled-exps)]))
+
 (defn- compile-list
   [sub procs pred e]
   (let [[op & params] e]
@@ -104,7 +125,10 @@
       (= 'let op) (compile-let sub procs pred e)
       (= 'if op) (compile-if sub procs pred e)
       (= 'sample op) (compile-sample sub procs pred e)
-      (= 'observe op) (compile-observe sub procs pred e))))
+      (= 'observe op) (compile-observe sub procs pred e)
+      (contains? procs op) (compile-procedure-call sub procs pred e)
+      (resolve op) (compile-primitive-call sub procs pred e)
+      :else [(empty-graph) e])))
 
 (defn- compile-expression
   [sub procs pred e]
@@ -117,4 +141,4 @@
   [program]
   (let [procs (into {} (map #(vector (second %) %)) (pop program))
         exp (peek program)]
-    (compile-expression procs true exp)))
+    (compile-expression {} procs true exp)))
