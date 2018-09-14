@@ -12,7 +12,11 @@
   (:gen-class))
 
 (def cli-options
-  [["-h" "--help"]])
+  [["-h" "--help" "Print this help message" :default false]
+   [nil "--parse" "Run upto parsing only" :default false]
+   [nil "--validate" "Run upto validation only" :default false]
+   [nil "--scope" "Run upto scoping only" :default false]
+   [nil "--desugar" "Run upto desugaring only" :default false]])
 
 (defn usage
   [option-summary]
@@ -49,10 +53,14 @@
                            (parse r))
             output (checked->
                      parse-result
-                     check-error validate
-                     check-error scope
-                     check-error desugar
-                     check-error compile-to-graph)]
+                     #(and (not (:parse options)) (check-error %))
+                     validate
+                     #(and (not (:validate options)) (check-error %))
+                     scope
+                     #(and (not (:scope options)) (check-error %))
+                     desugar
+                     #(and (not (:desugar options)) (check-error %))
+                     compile-to-graph)]
         (if (:angler.errors/error parse-result)
           (do (println (:angler.errors/message parse-result))
               (System/exit 2))

@@ -46,6 +46,11 @@
                     rev-checks)
             1))))
 
+(defn debug
+  [x]
+  (println x)
+  x)
+
 (defn read-error
   [& args]
   {::error ::read-error
