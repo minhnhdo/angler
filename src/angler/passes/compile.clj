@@ -28,21 +28,56 @@
             (not (literal? cond-exp)) (list 'if cond-exp then-exp else-exp)
             cond-exp (peval then-exp)
             :else (peval else-exp)))
+
+        ; list operations
+        (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
+        (- (count (first params)) 1)
+
+        (and (= 'peek op) (list-literal? (first params)) (= 1 (count params)))
+        (let [[[_ f]] params] f)
+
+        (and (= 'pop op) (list-literal? (first params)) (= 1 (count params)))
+        (apply list 'list (rest (rest (first params))))
+
+        (and (= 'list? op) (= 1 (count params)))
+        (let [[f] params]
+          (and (list? f) (= 'list (first f))))
+
         (and (= 'conj op) (list-literal? (first params)))
         (let [[[c & elems] & added] params]
           (apply list 'list (concat (reverse added) elems)))
-        (and (= 'peek op) (list-literal? (first params)) (= 1 (count params)))
-        (let [[[_ f]] params] f)
+
+        ; TODO list*
+
+        ;; sequence operations on lists
+
         (and (= 'first op) (list-literal? (first params)) (= 1 (count params)))
         (let [[[_ f]] params] f)
+
+        (and (= 'second op) (list-literal? (first params)) (= 1 (count params)))
+        (let [[[_ _ s]] params] s)
+
         (and (= 'rest op) (list-literal? (first params)) (= 1 (count params)))
         (let [[[_ _ & elems]] params] (apply list 'list elems))
+
+        ; last is correctly implemented by default
+
+        (and (= 'cons op) (list-literal? (second params)) (= 2 (count params)))
+        (let [[elem [_ & elems]] params] (apply list 'list elem elems))
+
         (and (= 'nth op)
              (list-literal? (first params))
              (= 2 (count params))
              (int? (second params))
              (<= 0 (second params) (- (count (first params)) 2)))
         (nth (first params) (+ 1 (second params)))
+
+        (and (= 'get op)
+             (list-literal? (first params))
+             (= 2 (count params))
+             (int? (second params)))
+        (get (first params) (+ 1 (second params)))
+
         :else (let [resolved-op (resolve op)]
                 (if (nil? resolved-op)
                   (apply list op params)
