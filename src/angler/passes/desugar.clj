@@ -72,7 +72,8 @@
     (list? e) (list 'list)
     (vector? e) (apply list 'vector (map desugar-expression e))
     (set? e) (apply list 'hash-set (map desugar-expression e))
-    (map? e) (apply list 'hash-map (map desugar-expression e))
+    (map? e) (apply list 'hash-map (map desugar-expression
+                                        (mapcat identity (seq e))))
     :else e))
 
 (defn- desugar-defn
