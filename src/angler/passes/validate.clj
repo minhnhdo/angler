@@ -118,21 +118,11 @@
                 validated-op
                 ast)))))
 
-(defn- validate-vector
-  [ast]
-  (let [contents (map validate-expression ast)
-        errors (filter :angler.errors/error contents)]
-    (if (empty? errors)
-      ast
-      (validate-error
-        (string/join \newline (map :angler.errors/message errors))))))
-
-(defn- validate-map
-  [ast]
-  (let [pairs (map validate-expression ast)
-        errors (filter :angler.errors/error pairs)]
-    (if (empty? errors)
-      ast
+(defn- params-helper
+  [params]
+  (let [errors (filter :angler.errors/error
+                       (map validate-expression params))]
+    (when (seq errors)
       (validate-error
         (string/join \newline (map :angler.errors/message errors))))))
 
@@ -140,8 +130,7 @@
   [ast]
   (cond
     (and (list? ast) (seq ast)) (validate-list ast)
-    (vector? ast) (validate-vector ast)
-    (map? ast) (validate-map ast)
+    (seq? ast) (or (params-helper ast) ast)
     (symbol? ast) (validate-identifier ast)
     :else ast))
 

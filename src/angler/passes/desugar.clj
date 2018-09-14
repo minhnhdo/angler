@@ -65,20 +65,13 @@
       (= 'loop op) (desugar-loop e)
       :else (apply list op desugared-params))))
 
-(defn- desugar-vector
-  [e]
-  (apply list 'vector e))
-
-(defn- desugar-map
-  [e]
-  (apply list 'hash-map e))
-
 (defn- desugar-expression
   [e]
   (cond
     (and (list? e) (seq e)) (desugar-list e)
-    (vector? e) (desugar-vector e)
-    (map? e) (desugar-map e)
+    (vector? e) (apply list 'vector (map desugar-expression e))
+    (set? e) (apply list 'hash-set (map desugar-expression e))
+    (map? e) (apply list 'hash-map (map desugar-expression e))
     :else e))
 
 (defn- desugar-defn

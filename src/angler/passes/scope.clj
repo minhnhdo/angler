@@ -65,8 +65,7 @@
   [bound-syms exp]
   (cond
     (and (list? exp) (seq exp)) (scope-list bound-syms exp)
-    (vector? exp) (or (params-helper bound-syms exp) exp)
-    (map? exp) (or (params-helper bound-syms exp) exp)
+    (seq? exp) (or (params-helper bound-syms exp) exp)
     (symbol? exp) (scope-identifier bound-syms exp)
     :else exp))
 
