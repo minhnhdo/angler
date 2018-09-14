@@ -5,63 +5,44 @@
             [angler.types :refer [empty-graph join-graph pmf new-graph]])
   (:import [angler.errors CompileError]))
 
-(def ^:private seq-data-constructors #{'list 'vector})
-
-(def ^:private data-constructors
-  (into seq-data-constructors ['hash-set 'hash-map]))
-
 (defn literal?
   [exp]
   (cond
     (symbol? exp) false
-    (and (list? exp) (seq exp)) (contains? data-constructors (first exp))
+    (and (list? exp) (seq exp)) (= 'list (first exp))
     :else true))
+
+(defn- list-literal?
+  [exp]
+  (and (list? exp) (= 'list (first exp))))
 
 (defn peval
   [exp]
   (if (and (list? exp) (seq exp))
     (let [[op & params] (map peval exp)]
       (cond
-        (or (not (symbol? op)) (contains? data-constructors op))
-        (apply list op params)
+        (or (not (symbol? op)) (= 'list op)) (apply list op params)
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
             (not (literal? cond-exp)) (list 'if cond-exp then-exp else-exp)
             cond-exp (peval then-exp)
             :else (peval else-exp)))
-        (and (= 'conj op)
-             (list? (first params)))
+        (and (= 'conj op) (list-literal? (first params)))
         (let [[[c & elems] & added] params]
-          (cond
-            (= 'list c) (apply list 'list (concat (reverse added) elems))
-            (= 'vector c) (apply list 'vector (concat elems added))
-            (= 'hash-set c) (apply list 'hash-set (concat elems added))
-            (= 'hash-map c) (if (every? #(and (seq %) (= 2 (count %))) added)
-                              (apply list 'hash-map
-                                     (concat elems (mapcat identity added)))
-                              (apply list 'conj params))
-            :else (apply list op params)))
-        (and (= 'peek op)
-             (contains? seq-data-constructors (first (first params)))
-             (empty? (rest params)))
-        (let [[[c f :as coll]] params]
-          (if (= 'list c)
-            f
-            (last coll)))
+          (apply list 'list (concat (reverse added) elems)))
+        (and (= 'peek op) (list-literal? (first params)) (= 1 (count params)))
+        (let [[[_ f]] params] f)
+        (and (= 'first op) (list-literal? (first params)) (= 1 (count params)))
+        (let [[[_ f]] params] f)
+        (and (= 'rest op) (list-literal? (first params)) (= 1 (count params)))
+        (let [[[_ _ & elems]] params] (apply list 'list elems))
         (and (= 'nth op)
-             (contains? seq-data-constructors (first (first params)))
+             (list-literal? (first params))
+             (= 2 (count params))
              (int? (second params))
              (<= 0 (second params) (- (count (first params)) 2)))
         (nth (first params) (+ 1 (second params)))
-        (and (= 'get op)
-             (= 'hash-map (first (first params)))
-             (= 2 (count params)))
-        (let [[[_ & elems] k] params
-              m (apply hash-map elems)]
-          (if (contains? m k)
-            (m k)
-            (apply list op params)))
         :else (let [resolved-op (resolve op)]
                 (if (nil? resolved-op)
                   (apply list op params)

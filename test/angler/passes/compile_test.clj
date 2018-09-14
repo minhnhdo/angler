@@ -32,14 +32,24 @@
                         '(str "a" "b" "c" "d") "abcd"
                         '(if true 1 2) 1
                         '(conj (list 1 2 3) a) '(list a 1 2 3)
-                        '(conj (vector 1 2 3) a) '(vector 1 2 3 a)
-                        '(conj (hash-set 1 2 3) a) '(hash-set 1 2 3 a)
-                        '(conj (hash-map 1 2 3 4) [b c]) '(hash-map 1 2 3 4 b c)
+                        '(conj (vector 1 2 3) a) [1 2 3 'a]
+                        '(conj (hash-set 1 2 3) a) #{1 2 3 'a}
+                        '(conj (hash-map 1 2 3 4) [b c]) {1 2 3 4 'b 'c}
                         '(peek (list 1 2 3)) 1
                         '(peek (vector 1 2 3)) 3
                         '(nth (list 1 2 3) 0) 1
                         '(nth (vector 1 2 3) 0) 1
                         '(get (hash-map 1 (+ 4 5) 3 a) 1) 9
                         '(get (hash-map :a b :c d) :a) 'b}]
+    (testing (str e " should evaluate to " expected)
+      (is (= expected (peval e))))))
+
+(deftest peval-nested-expressions
+  (doseq [[e expected] {'(if true (+ 1 2) (- 3 4)) 3
+                        '(if false
+                           (conj (vector 3 4) 5)
+                           (first (rest (list 1 2)))) 2
+                        '(conj (if true (vector 1 2) (list 3 4))
+                               (if false (+ 1 2) (- 3 4))) [1 2 -1]}]
     (testing (str e " should evaluate to " expected)
       (is (= expected (peval e))))))
