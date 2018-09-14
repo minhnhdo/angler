@@ -7,4 +7,5 @@
                  [org.clojure/tools.cli "0.3.7"]]
   :main ^:skip-aot angler.core
   :target-path "target/%s"
+  :aot [angler.errors]
   :profiles {:uberjar {:aot :all}})

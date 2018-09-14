@@ -1,8 +1,9 @@
 (ns angler.passes.compile
   (:require [clojure.set :refer [intersection union]]
-            [angler.errors :refer [checks]]
+            [angler.errors :refer [checks compile-error]]
             [angler.passes.scope :refer [built-ins]]
-            [angler.types :refer [empty-graph join-graph pmf new-graph]]))
+            [angler.types :refer [empty-graph join-graph pmf new-graph]])
+  (:import [angler.errors CompileError]))
 
 (declare free-vars)
 
@@ -29,13 +30,13 @@
   [exp v]
   (checks
     [(and (list? exp) (seq exp))
-     (throw (RuntimeException. (str "Unexpected " (class exp) " " exp)))]
+     (throw (CompileError. (str "Unexpected " (class exp) " " exp)))]
     (let [[op & params] exp]
       (cond
         (= 'if op) (let [[e1 e2 e3] params]
                      (list 'if e1 (score e2 v) (score e3 v)))
         (contains? pmf op) (apply list (pmf op) v params)
-        :else (throw (RuntimeException. (str "Unexpected " exp)))))))
+        :else (throw (CompileError. (str "Unexpected " exp)))))))
 
 (defn- compile-identifier
   [sub procs pred identifier]
@@ -93,7 +94,7 @@
         B (set (map #(vector % v) Z))
         unexpected-free-vars (intersection (free-vars procs compiled-e2) V)]
     (if (seq unexpected-free-vars)
-      (throw (RuntimeException.
+      (throw (CompileError.
                (str "Unexpected free variables " unexpected-free-vars
                     " in " observe-exp)))
       [(new-graph (conj V v) (union A B) (assoc P v F) (assoc Y v compiled-e2))
@@ -144,4 +145,7 @@
   [program]
   (let [procs (into {} (map #(vector (second %) %)) (pop program))
         exp (peek program)]
-    (compile-expression {} procs true exp)))
+    (try
+      (compile-expression {} procs true exp)
+      (catch CompileError e
+        (compile-error (.getMessage e))))))

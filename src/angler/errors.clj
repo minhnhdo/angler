@@ -1,5 +1,11 @@
 (ns angler.errors)
 
+(gen-class
+  :name angler.errors.CompileError
+  :extends RuntimeException
+  :constructors {[String] [String] [] []}
+  :main false)
+
 (defmacro checks
   "Usage: (checks [check-and-failure-result*] success-result)
 
@@ -50,6 +56,11 @@
   [x]
   (println x)
   x)
+
+(defn compile-error
+  [& args]
+  {::error ::compile-error
+   ::message (apply str args)})
 
 (defn read-error
   [& args]
