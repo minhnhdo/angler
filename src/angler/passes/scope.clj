@@ -28,7 +28,7 @@
   [bound-syms bindings]
   (let [[new-bound-syms scoping-results]
         (reduce (fn [[bound-syms r] [v exp]]
-                  [(conj bound-syms v)
+                  [(assoc bound-syms v {:is-fn? false})
                    (conj r (scope-expression bound-syms exp))])
                 [bound-syms []]
                 (partition 2 bindings))
@@ -57,8 +57,25 @@
                     (or (bindings-and-body-helper bound-syms bindings body)
                         list-exp))
       (= 'foreach op) (let [[_ bindings & body] params]
-                        (or (bindings-and-body-helper bound-syms bindings body) list-exp))
-      (contains? built-ins op) (or (params-helper bound-syms params) list-exp)
+                        (or (bindings-and-body-helper bound-syms bindings body)
+                            list-exp))
+      (or (contains? built-ins op) (resolve op)) (or (params-helper bound-syms
+                                                                    params)
+                                                     list-exp)
+      (and (contains? bound-syms op)
+           (:is-fn? (bound-syms op))) (let [{:keys [nargs]} (bound-syms op)]
+                                        (or (when (not= (:nargs (bound-syms op))
+                                                        (count params))
+                                              (scope-error "Procedure " op
+                                                           " requires "
+                                                           nargs " arguments "
+                                                           " but is called "
+                                                           " with "
+                                                           (count params)
+                                                           " arguments\n"
+                                                           list-exp))
+                                            (params-helper bound-syms params)
+                                            list-exp))
       :else (or (params-helper bound-syms list-exp) list-exp))))
 
 (defn- scope-expression
@@ -72,15 +89,18 @@
 (defn- scope-defn
   [bound-syms ast]
   (let [[_ _ arguments body] ast]
-    (scope-expression (into bound-syms arguments) body)))
+    (scope-expression (into bound-syms
+                            (map #(vector % {:is-fn? false}) arguments))
+                      body)))
 
 (defn scope
   [program]
   (let [[bound-syms scoped-defns]
-        (reduce (fn [[bound-syms r] [_ fn-name :as ast]]
-                  [(conj bound-syms fn-name)
+        (reduce (fn [[bound-syms r] [_ fn-name arguments :as ast]]
+                  [(assoc bound-syms fn-name {:is-fn? true
+                                              :nargs (count arguments)})
                    (conj r (scope-defn bound-syms ast))])
-                [#{} []]
+                [{} []]
                 (pop program))
         scoped-exp (scope-expression bound-syms (peek program))
         errors (filter :angler.errors/error (concat scoped-defns [scoped-exp]))]
