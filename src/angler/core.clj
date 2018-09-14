@@ -4,6 +4,7 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
             [angler.errors :refer [checked->]]
+            [angler.passes.compile :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
@@ -50,7 +51,8 @@
                      parse-result
                      check-error validate
                      check-error scope
-                     check-error desugar)]
+                     check-error desugar
+                     check-error compile-to-graph)]
         (if (:angler.errors/error parse-result)
           (do (println (:angler.errors/message parse-result))
               (System/exit 2))
