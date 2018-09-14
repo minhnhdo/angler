@@ -1,5 +1,5 @@
 (ns angler.passes.compile
-  (:require [clojure.set :refer [difference intersection union]]
+  (:require [clojure.set :refer [intersection union]]
             [angler.errors :refer [checks]]
             [angler.passes.scope :refer [built-ins]]
             [angler.types :refer [empty-graph join-graph pmf new-graph]]))
@@ -11,7 +11,7 @@
   (let [[op & params] list-exp]
     (if (= 'let op)
       (let [[[v e] body] params]
-        (difference (union (free-vars e) (free-vars body)) v))
+        (disj (union (free-vars procs e) (free-vars procs body)) v))
       (apply union (map #(free-vars procs %) list-exp)))))
 
 (defn free-vars
