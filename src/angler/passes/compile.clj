@@ -138,11 +138,11 @@
   (let [[_ cond-exp then-exp else-exp] if-exp
         [graph-cond compiled-cond] (compile-expression sub procs pred cond-exp)
         [graph-then compiled-then]
-        (compile-expression sub procs (list 'and pred cond-exp) then-exp)
+        (compile-expression sub procs (peval (list 'and pred cond-exp)) then-exp)
         [graph-else compiled-else]
-        (compile-expression sub procs (list 'and pred (not cond-exp)) else-exp)]
+        (compile-expression sub procs (peval (list 'and pred (not cond-exp))) else-exp)]
     [(join-graph graph-cond graph-then graph-else)
-     (list 'if compiled-cond compiled-then compiled-else)]))
+     (peval (list 'if compiled-cond compiled-then compiled-else))]))
 
 (defn- compile-sample
   [sub procs pred sample-exp]
@@ -195,7 +195,7 @@
         graphs (map #(nth % 0) compiled-results)
         compiled-exps (map #(nth % 1) compiled-results)]
     [(apply join-graph graphs)
-     (apply list op compiled-exps)]))
+     (peval (apply list op compiled-exps))]))
 
 (defn- compile-list
   [sub procs pred e]
