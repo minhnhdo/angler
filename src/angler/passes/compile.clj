@@ -22,6 +22,8 @@
   (if (and (list? exp) (seq exp))
     (let [[op & params] (map peval exp)]
       (cond
+        (or (not (symbol? op)) (contains? data-constructors op))
+        (apply list op params)
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
@@ -30,35 +32,40 @@
             :else (peval else-exp)))
         (and (= 'conj op)
              (list? (first params)))
-        (let [[[c & elems :as coll] & added] params]
+        (let [[[c & elems] & added] params]
           (cond
             (= 'list c) (apply list 'list (concat (reverse added) elems))
             (= 'vector c) (apply list 'vector (concat elems added))
             (= 'hash-set c) (apply list 'hash-set (concat elems added))
             (= 'hash-map c) (if (every? #(and (seq %) (= 2 (count %))) added)
-                              (apply list 'hash-map (concat elems added))
+                              (apply list 'hash-map
+                                     (concat elems (mapcat identity added)))
                               (apply list 'conj params))
             :else (apply list op params)))
         (and (= 'peek op)
-             (contains? seq-data-constructors (first params))
+             (contains? seq-data-constructors (first (first params)))
              (empty? (rest params)))
-        (let [[[c :as coll]] params]
+        (let [[[c f :as coll]] params]
           (if (= 'list c)
-            (last coll)
-            (second coll)))
+            f
+            (last coll)))
         (and (= 'nth op)
-             (contains? seq-data-constructors (first params))
+             (contains? seq-data-constructors (first (first params)))
              (int? (second params))
              (<= 0 (second params) (- (count (first params)) 2)))
         (nth (first params) (+ 1 (second params)))
         (and (= 'get op)
              (= 'hash-map (first (first params)))
              (= 2 (count params)))
-        (let [m (eval (first params))]
-          (if (contains? m (second params))
-            (m (second params))
+        (let [[[_ & elems] k] params
+              m (apply hash-map elems)]
+          (if (contains? m k)
+            (m k)
             (apply list op params)))
-        :else (apply list op params)))
+        :else (let [resolved-op (resolve op)]
+                (if (nil? resolved-op)
+                  (apply list op params)
+                  (apply resolved-op params)))))
     exp))
 
 (declare free-vars)
