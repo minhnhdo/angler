@@ -1,5 +1,6 @@
 (ns angler.types
-  (:require [clojure.set :refer [union]]))
+  (:require [clojure.pprint :refer [pprint]]
+            [clojure.set :refer [union]]))
 
 (def pmf
   {'bernoulli 'p_bernoulli
@@ -47,3 +48,15 @@
 
   ([^Graph graph1 ^Graph graph2 & graphs]
    (reduce join-graph (join-graph graph1 graph2) graphs)))
+
+(defn count-vertices
+  [^Graph graph]
+  (count (:V graph)))
+
+(defn count-edges
+  [^Graph graph]
+  (count (:A graph)))
+
+(defn print-graph
+  [^Graph graph]
+  (pprint graph))

@@ -8,7 +8,8 @@
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
-            [angler.passes.validate :refer [validate]])
+            [angler.passes.validate :refer [validate]]
+            [angler.types :refer [count-edges count-vertices print-graph]])
   (:gen-class))
 
 (def cli-options
@@ -16,7 +17,12 @@
    [nil "--parse" "Run upto parsing only" :default false]
    [nil "--validate" "Run upto validation only" :default false]
    [nil "--scope" "Run upto scoping only" :default false]
-   [nil "--desugar" "Run upto desugaring only" :default false]])
+   [nil "--desugar" "Run upto desugaring only" :default false]
+   [nil "--count-vertices" "Print the number of vertices in the resulting graph"
+    :default false]
+   [nil "--count-edges" "Print the number of edges in the resulting graph"
+    :default false]
+   [nil "--print-graph" "Print the resulting graph" :default false]])
 
 (defn usage
   [option-summary]
@@ -64,4 +70,9 @@
         (if (:angler.errors/error parse-result)
           (do (println (:angler.errors/message parse-result))
               (System/exit 2))
-          (pprint output))))))
+          (let [[graph compiled-exp] output]
+            (cond
+              (:count-vertices options) (println (count-vertices graph))
+              (:count-edges options) (println (count-edges graph))
+              (:print-graph options) (print-graph graph)
+              :else (pprint output))))))))
