@@ -67,8 +67,8 @@
                      desugar
                      #(and (not (:desugar options)) (check-error %))
                      compile-to-graph)]
-        (if (:angler.errors/error parse-result)
-          (do (println (:angler.errors/message parse-result))
+        (if (:angler.errors/error output)
+          (do (println (:angler.errors/message output))
               (System/exit 2))
           (let [[graph compiled-exp] output]
             (cond
