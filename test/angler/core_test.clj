@@ -9,7 +9,7 @@
             [angler.passes.validate :refer [validate]]))
 
 (deftest validated-scoped-desugared-twice
-  (doseq [i (range 1 9)]
+  (doseq [i (range 1 11)]
     (let [filename (str "examples/e" i ".clj")]
       (testing (str "Validating, scoping and desugaring " filename " twice")
         (let [parse-result (with-open [r (java.io.PushbackReader. (io/reader (io/resource filename)))]
