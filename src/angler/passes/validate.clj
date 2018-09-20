@@ -84,7 +84,7 @@
                               (validate-error
                                 (string/join
                                   \newline (map :angler.errors/message errors)))))))
-      (= 'loop op) (let [[c e f & body] validated-params]
+      (= 'loop op) (let [[c _ f] validated-params]
                      (checks
                        [(and (int? c) (> c 0))
                         (validate-error

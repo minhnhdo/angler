@@ -12,7 +12,8 @@
             [angler.passes.scope :refer [scope]]
             [angler.passes.validate :refer [validate]]
             [angler.types :refer [count-edges count-vertices print-graph]])
-  (:gen-class))
+  (:gen-class)
+  (:import (java.io PushbackReader)))
 
 (def cli-options
   [["-h" "--help" "Print this help message" :default false]
@@ -57,7 +58,7 @@
     (doseq [f arguments]
       (let [parse-result (with-open [r (if (= "-" f)
                                          *in*
-                                         (java.io.PushbackReader. (io/reader f)))]
+                                         (PushbackReader. (io/reader f)))]
                            (parse r))
             output (checked->
                      parse-result
@@ -72,7 +73,7 @@
         (if (:angler.errors/error output)
           (do (println (:angler.errors/message output))
               (System/exit 2))
-          (let [[graph compiled-exp] output]
+          (let [[graph] output]
             (cond
               (:count-vertices options) (println (count-vertices graph))
               (:count-edges options) (println (count-edges graph))

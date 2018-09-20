@@ -1,14 +1,15 @@
 (ns angler.passes.parse
   (:require [clojure.edn :as edn]
             [clojure.pprint :refer [pprint]]
-            [angler.errors :refer [read-error]]))
+            [angler.errors :refer [read-error]])
+  (:import (java.io PushbackReader)))
 
 (defn parse
-  [^java.io.PushbackReader r]
+  [^PushbackReader r]
   (loop [exps []]
     (let [e (try
               (edn/read {:readers {}, :eof ::done} r)
-              (catch java.lang.RuntimeException e
+              (catch RuntimeException _
                 (if (empty? exps)
                   (read-error "Parse error at beginning of file")
                   (read-error "Parse error after expression\n"

@@ -87,7 +87,7 @@
           (and (list? f) (= 'list (first f))))
 
         (and (= 'conj op) (list-literal? (first params)))
-        (let [[[c & elems] & added] params]
+        (let [[[_ & elems] & added] params]
           (apply list 'list (concat (reverse added) elems)))
 
         ; TODO list*
@@ -166,7 +166,7 @@
         :else (throw (CompileError. (str "Unexpected " exp)))))))
 
 (defn- compile-identifier
-  [sub procs pred identifier]
+  [sub _ _ identifier]
   [(empty-graph)
    (if (contains? sub identifier)
      (sub identifier)
@@ -248,7 +248,7 @@
 
 (defn- compile-list
   [sub procs pred e]
-  (let [[op & params] e]
+  (let [[op] e]
     (cond
       (= 'let op) (compile-let sub procs pred e)
       (= 'if op) (compile-if sub procs pred e)

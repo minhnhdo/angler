@@ -1,6 +1,7 @@
 (ns angler.types
   (:require [clojure.pprint :refer [pprint]]
-            [clojure.set :refer [union]]))
+            [clojure.set :refer [union]])
+  (:import (clojure.lang IPersistentSet IPersistentMap)))
 
 (def distributions
   #{'bernoulli 'beta 'categorical 'categorical-crp 'categorical-dp 'chi-squared
@@ -8,10 +9,10 @@
     'uniform-continuous 'wishart})
 
 (defrecord Graph
-  [^clojure.lang.IPersistentSet V
-   ^clojure.lang.IPersistentSet A
-   ^clojure.lang.IPersistentMap P
-   ^clojure.lang.IPersistentMap Y])
+  [^IPersistentSet V
+   ^IPersistentSet A
+   ^IPersistentMap P
+   ^IPersistentMap Y])
 
 (defn graph?
   [obj]
@@ -19,10 +20,10 @@
 
 (defn new-graph
   ^Graph
-  [^clojure.lang.IPersistentSet V
-   ^clojure.lang.IPersistentSet A
-   ^clojure.lang.IPersistentMap P
-   ^clojure.lang.IPersistentMap Y]
+  [^IPersistentSet V
+   ^IPersistentSet A
+   ^IPersistentMap P
+   ^IPersistentMap Y]
   (Graph. V A P Y))
 
 (defn empty-graph
