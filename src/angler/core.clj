@@ -4,7 +4,9 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
             [angler.errors :refer [checked->]]
-            [angler.passes.compile :refer [compile-to-graph]]
+            [angler.passes.compile :refer [compile-to-graph
+                                           edge-vector->adjacency-vector
+                                           topological-sort]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
@@ -75,4 +77,8 @@
               (:count-vertices options) (println (count-vertices graph))
               (:count-edges options) (println (count-edges graph))
               (:print-graph options) (print-graph graph)
-              :else (pprint output))))))))
+              :else (let [[{:keys [V A]}] output]
+                      (pprint output)
+                      (pprint
+                        (topological-sort
+                          V (edge-vector->adjacency-vector (vec A))))))))))))

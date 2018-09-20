@@ -6,6 +6,46 @@
                                   new-graph]])
   (:import [angler.errors CompileError]))
 
+(defn edge-vector->adjacency-vector
+  [edges]
+  (loop [result {}
+         es edges]
+    (if (seq es)
+      (let [[v1 v2] (peek es)]
+        (recur (assoc result v1 (conj (vec (result v1)) v2))
+               (pop es)))
+      result)))
+
+(defn topological-sort
+  [vertices adjacency-vector]
+  (loop [to-visit (mapv #(vector #{} % (adjacency-vector %)) vertices)
+         visited #{}
+         result (list)]
+    (if (empty? to-visit)
+      result
+      (let [[temporary v neighbors] (peek to-visit)
+            new-to-visit (pop to-visit)]
+        (cond
+          (contains? visited v) (recur new-to-visit
+                                       visited
+                                       result)
+          (empty? neighbors) (recur new-to-visit
+                                    (conj visited v)
+                                    (conj result v))
+          (contains? temporary v) (compile-error "Not a DAG "
+                                                 vertices " "
+                                                 adjacency-vector)
+          :else (let [new-neighbors (pop neighbors)
+                      m (peek neighbors)]
+                  (recur (into new-to-visit
+                               [[temporary v new-neighbors]
+                                [(conj temporary v)
+                                 m
+                                 (vec (filter #(not (contains? visited %))
+                                              (adjacency-vector m)))]])
+                         visited
+                         result)))))))
+
 (defn literal?
   [exp]
   (cond
