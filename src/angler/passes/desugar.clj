@@ -48,7 +48,7 @@
              (desugar-let
                (apply list 'let (vec (mapcat #(let [v (nth % 0)
                                                     e (nth % 1)]
-                                                [v (list 'get e i)])
+                                                [v (list 'nth e i)])
                                              partitioned-bindings))
                       body))))))
 

@@ -2,7 +2,8 @@
   (:require [clojure.set :refer [intersection union]]
             [angler.errors :refer [checks compile-error]]
             [angler.passes.scope :refer [built-ins]]
-            [angler.types :refer [empty-graph join-graph pmf new-graph]])
+            [angler.types :refer [distributions empty-graph join-graph
+                                  new-graph]])
   (:import [angler.errors CompileError]))
 
 (defn literal?
@@ -121,14 +122,15 @@
       (cond
         (= 'if op) (let [[e1 e2 e3] params]
                      (list 'if e1 (score e2 v) (score e3 v)))
-        (contains? pmf op) (apply list (pmf op) v params)
+        (contains? distributions op) (list 'observe* exp v)
         :else (throw (CompileError. (str "Unexpected " exp)))))))
 
 (defn- compile-identifier
   [sub procs pred identifier]
-  (if (contains? sub identifier)
-    (sub identifier)
-    [(empty-graph) identifier]))
+  [(empty-graph)
+   (if (contains? sub identifier)
+     (sub identifier)
+     identifier)])
 
 (declare compile-expression)
 
@@ -137,7 +139,7 @@
   (let [[_ [v e] body] let-exp
         [graph-e compiled-e] (compile-expression sub procs pred e)
         [graph-body compiled-body]
-        (compile-expression (assoc sub v [graph-e compiled-e]) procs pred body)]
+        (compile-expression (assoc sub v compiled-e) procs pred body)]
     [(join-graph graph-e graph-body) compiled-body]))
 
 (defn- compile-if
@@ -156,7 +158,7 @@
   (let [[_ e] sample-exp
         [{:keys [V A P Y]} compiled-e] (compile-expression sub procs pred e)
         v (gensym)
-        Z (intersection (free-vars procs compiled-e) V)
+        Z (free-vars procs compiled-e)
         F (score compiled-e v)]
     [(new-graph (conj V v)
                 (into A (map #(vector % v) Z))
@@ -173,7 +175,7 @@
         v (gensym)
         F1 (score compiled-e1 v)
         F (peval (list 'if pred F1 1))
-        Z (intersection (disj (free-vars procs F1) v) V)
+        Z (disj (free-vars procs F1) v)
         B (set (map #(vector % v) Z))
         unexpected-free-vars (intersection (free-vars procs compiled-e2) V)]
     (if (seq unexpected-free-vars)
@@ -190,7 +192,7 @@
         compiled-results (map #(compile-expression sub procs pred %) params)
         graphs (map #(nth % 0) compiled-results)
         compiled-exps (map #(nth % 1) compiled-results)
-        new-sub (into sub (map #(vector %1  %2) arguments compiled-results))
+        new-sub (into sub (map #(vector %1  %2) arguments compiled-exps))
         [graph-body compiled-body] (compile-expression new-sub procs pred body)]
     [(apply join-graph (concat graphs graph-body))
      compiled-body]))
@@ -213,8 +215,8 @@
       (= 'sample op) (compile-sample sub procs pred e)
       (= 'observe op) (compile-observe sub procs pred e)
       (contains? procs op) (compile-procedure-call sub procs pred e)
-      (or (contains? pmf op) (resolve op)) (compile-primitive-call
-                                             sub procs pred e)
+      (or (contains? distributions op)
+          (resolve op)) (compile-primitive-call sub procs pred e)
       :else [(empty-graph) e])))
 
 (defn- compile-expression

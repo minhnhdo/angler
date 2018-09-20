@@ -4,7 +4,7 @@
             [angler.types :refer [distributions]]))
 
 (def built-ins
-  (into #{'if 'loop 'observe 'sample} distributions))
+  (into #{'if 'loop 'observe 'sample 'observe*} distributions))
 
 (defn- scope-identifier
   [bound-syms identifier]

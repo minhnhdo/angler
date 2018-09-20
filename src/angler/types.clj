@@ -2,13 +2,10 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.set :refer [union]]))
 
-(def pmf
-  {'bernoulli 'p_bernoulli
-   'beta 'p_beta
-   'exp 'p_exp
-   'normal 'p_normal})
-
-(def distributions (set (keys pmf)))
+(def distributions
+  #{'bernoulli 'beta 'categorical 'categorical-crp 'categorical-dp 'chi-squared
+    'discrete 'dirichlet 'exp 'flip 'gamma 'multivariate-t 'mvn 'normal 'poisson
+    'uniform-continuous 'wishart})
 
 (defrecord Graph
   [^clojure.lang.IPersistentSet V

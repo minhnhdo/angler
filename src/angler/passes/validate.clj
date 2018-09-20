@@ -14,7 +14,6 @@
      (validate-error
        "Expected identifier, found " (class identifier) "\n"
        (prettify identifier))]
-
     identifier))
 
 (declare validate-expression)
