@@ -87,7 +87,7 @@
 
         (and (= 'conj op) (list-literal? (first params)))
         (let [[[_ & elems] & added] params]
-          (apply list 'list (concat (reverse added) elems)))
+          (apply list 'list (into elems added)))
 
         ; TODO list*
 

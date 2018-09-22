@@ -45,9 +45,10 @@
                                           (validate-expression (nth % 1)))
                                  (partition 2 bindings))
                             validated-body (map validate-expression body)
-                            errors (filter :angler.errors/error
-                                           (concat (flatten validated-bindings)
-                                                   validated-body))]
+                            errors (filter
+                                     :angler.errors/error
+                                     (into (vec (flatten validated-bindings))
+                                           validated-body))]
                         (if (empty? errors)
                           ast
                           (validate-error
@@ -76,9 +77,10 @@
                                      (partition 2 bindings))
                                 validated-body
                                 (map validate-expression body)
-                                errors (filter :angler.errors/error
-                                               (concat (flatten validated-bindings)
-                                                       validated-body))]
+                                errors (filter
+                                         :angler.errors/error
+                                         (into (vec (flatten validated-bindings))
+                                               validated-body))]
                             (if (empty? errors)
                               ast
                               (validate-error
@@ -169,10 +171,10 @@
   [exps]
   (checks
     [(seq exps) (validate-error "Empty program")]
-    (let [validated-defns (map validate-defn (pop exps))
+    (let [validated-defns (mapv validate-defn (pop exps))
           validated-exp (validate-expression (peek exps))
           errors (filter :angler.errors/error
-                         (concat validated-defns [validated-exp]))]
+                         (conj validated-defns validated-exp))]
       (checks
         [(empty? errors)
          (validate-error

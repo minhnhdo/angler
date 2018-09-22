@@ -101,7 +101,7 @@
                 [{} []]
                 (pop program))
         scoped-exp (scope-expression bound-syms (peek program))
-        errors (filter :angler.errors/error (concat scoped-defns [scoped-exp]))]
+        errors (filter :angler.errors/error (conj (vec scoped-defns) scoped-exp))]
     (if (empty? errors)
       program
       (scope-error
