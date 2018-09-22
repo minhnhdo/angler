@@ -214,13 +214,13 @@
         F1 (score compiled-e1 v)
         F (peval (list 'if pred F1 1))
         Z (disj (free-vars procs F1) v)
-        B (set (map #(vector % v) Z))
+        B (map #(vector % v) Z)
         unexpected-free-vars (intersection (free-vars procs compiled-e2) V)]
     (if (seq unexpected-free-vars)
       (throw (CompileError.
                (str "Unexpected free variables " unexpected-free-vars
                     " in " observe-exp)))
-      [(new-graph (conj V v) (union A B) (assoc P v F) (assoc Y v compiled-e2))
+      [(new-graph (conj V v) (into A B) (assoc P v F) (assoc Y v compiled-e2))
        compiled-e2])))
 
 (defn- compile-procedure-call
