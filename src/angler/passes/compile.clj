@@ -63,7 +63,7 @@
       (cond
         (or (not (symbol? op)) (= 'list op)) (apply list op params)
         (contains? #{'hash-map 'hash-set 'vector} op)
-        (apply (resolve op) params)
+        (apply (built-ins op) params)
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
@@ -121,7 +121,7 @@
         (get (first params) (+ 1 (second params)))
 
         ; try to perform primitive calls
-        :else (let [resolved-op (resolve op)]
+        :else (let [resolved-op (built-ins op)]
                 (cond
                   (and (contains? #{'conj 'cons 'first 'rest 'last} op)
                        (value? (first params)))
@@ -146,23 +146,22 @@
   (cond
     (and (list? ast) (seq ast)) (free-vars-list procs ast)
     (symbol? ast) (if (or (contains? procs ast)
-                          (contains? built-ins ast)
-                          (resolve ast))
+                          (contains? built-ins ast))
                     #{}
                     #{ast})
     :else #{}))
 
 (defn- score
   [exp v]
-  (checks
-    [(and (list? exp) (seq exp))
-     (throw (CompileError. (str "Unexpected " (class exp) " " exp)))]
-    (let [[op & params] exp]
-      (cond
-        (= 'if op) (let [[e1 e2 e3] params]
-                     (list 'if e1 (score e2 v) (score e3 v)))
-        (contains? pmf op) (list 'observe* exp v)
-        :else (throw (CompileError. (str "Unexpected " exp)))))))
+  (cond
+    (list? exp) (let [[op & params] exp]
+                  (cond
+                    (= 'if op) (let [[e1 e2 e3] params]
+                                 (list 'if e1 (score e2 v) (score e3 v)))
+                    (contains? pmf op) (list 'observe* exp v)
+                    :else (throw (CompileError. (str "Unexpected " exp)))))
+    (satisfies? anglican.runtime/distribution exp) (list 'observe* exp v)
+    :else (throw (CompileError. (str "Unexpected " exp)))))
 
 (defn- compile-identifier
   [sub _ _ identifier]
@@ -254,8 +253,7 @@
       (= 'sample op) (compile-sample sub procs pred e)
       (= 'observe op) (compile-observe sub procs pred e)
       (contains? procs op) (compile-procedure-call sub procs pred e)
-      (or (contains? pmf op)
-          (resolve op)) (compile-primitive-call sub procs pred e)
+      (contains? built-ins op) (compile-primitive-call sub procs pred e)
       :else [(empty-graph) e])))
 
 (defn- compile-expression
