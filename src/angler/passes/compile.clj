@@ -45,7 +45,7 @@
                          visited
                          result)))))))
 
-(defn literal?
+(defn value?
   [exp]
   (cond
     (symbol? exp) false
@@ -67,7 +67,7 @@
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
-            (not (literal? cond-exp)) (list 'if cond-exp then-exp else-exp)
+            (not (value? cond-exp)) (list 'if cond-exp then-exp else-exp)
             cond-exp (peval then-exp)
             :else (peval else-exp)))
 
@@ -124,9 +124,9 @@
         :else (let [resolved-op (resolve op)]
                 (cond
                   (and (contains? #{'conj 'cons 'first 'rest 'last} op)
-                       (literal? (first params)))
+                       (value? (first params)))
                   (apply resolved-op params)
-                  (or (nil? resolved-op) (not (every? literal? params)))
+                  (or (nil? resolved-op) (not (every? value? params)))
                   (apply list op params)
                   :else (apply resolved-op params)))))
     exp))
