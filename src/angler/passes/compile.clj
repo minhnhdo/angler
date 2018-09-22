@@ -229,11 +229,11 @@
   (let [[fn-name & params] call-exp
         [_ _ arguments body] (procs fn-name)
         compiled-results (map #(compile-expression sub procs pred %) params)
-        graphs (map #(nth % 0) compiled-results)
+        graphs (mapv #(nth % 0) compiled-results)
         compiled-exps (map #(nth % 1) compiled-results)
         new-sub (into sub (map #(vector %1  %2) arguments compiled-exps))
         [graph-body compiled-body] (compile-expression new-sub procs pred body)]
-    [(apply join-graph (concat graphs graph-body))
+    [(apply join-graph (conj graphs graph-body))
      compiled-body]))
 
 (defn- compile-primitive-call
