@@ -23,6 +23,8 @@
           'observe 'observe
           'observe* 'observe*
           'sample 'sample}
+         {'append (fn [& vectors]
+                    (apply into [] vectors))} ; fix for missing append
          pmf
          (ns-publics 'anglican.core)
          (ns-publics 'anglican.runtime)
