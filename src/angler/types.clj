@@ -1,12 +1,32 @@
 (ns angler.types
   (:require [clojure.pprint :refer [pprint]]
-            [clojure.set :refer [union]])
+            [clojure.set :refer [union]]
+            [clojure.string :refer [ends-with? starts-with?]]
+            [anglican core runtime])
   (:import (clojure.lang IPersistentSet IPersistentMap)))
 
-(def distributions
-  #{'bernoulli 'beta 'categorical 'categorical-crp 'categorical-dp 'chi-squared
-    'discrete 'dirichlet 'exp 'flip 'gamma 'multivariate-t 'mvn 'normal 'poisson
-    'uniform-continuous 'wishart})
+(def pmf
+  (->> (ns-publics 'anglican.runtime)
+       (map #(let [[k v] %]
+               [(name k) v]))
+       (filter #(let [[k v] %]
+                  (and (starts-with? k "->")
+                       (ends-with? k "-distribution"))))
+       (map #(let [[k v] %
+                   l (count k)]
+               [(symbol (subs k 2 (- l 13))) v]))
+       (into {})))
+
+(def built-ins
+  (merge {'if 'if
+          'loop 'loop
+          'observe 'observe
+          'observe* 'observe*
+          'sample 'sample}
+         pmf
+         (ns-publics 'anglican.core)
+         (ns-publics 'anglican.runtime)
+         (ns-publics 'clojure.core)))
 
 (defrecord Graph
   [^IPersistentSet V

@@ -1,10 +1,8 @@
 (ns angler.passes.scope
-  (:require [clojure.string :as string]
+  (:require [clojure.set :refer [union]]
+            [clojure.string :as string]
             [angler.errors :refer [checks scope-error]]
-            [angler.types :refer [distributions]]))
-
-(def built-ins
-  (into #{'if 'loop 'observe 'sample 'observe*} distributions))
+            [angler.types :refer [built-ins]]))
 
 (defn- scope-identifier
   [bound-syms identifier]

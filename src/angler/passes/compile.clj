@@ -1,9 +1,8 @@
 (ns angler.passes.compile
   (:require [clojure.set :refer [intersection union]]
             [angler.errors :refer [checks compile-error]]
-            [angler.passes.scope :refer [built-ins]]
-            [angler.types :refer [distributions empty-graph join-graph
-                                  new-graph]])
+            [angler.types :refer [built-ins empty-graph join-graph new-graph
+                                  pmf]])
   (:import [angler.errors CompileError]))
 
 (defn edge-vector->adjacency-vector
@@ -162,7 +161,7 @@
       (cond
         (= 'if op) (let [[e1 e2 e3] params]
                      (list 'if e1 (score e2 v) (score e3 v)))
-        (contains? distributions op) (list 'observe* exp v)
+        (contains? pmf op) (list 'observe* exp v)
         :else (throw (CompileError. (str "Unexpected " exp)))))))
 
 (defn- compile-identifier
@@ -255,7 +254,7 @@
       (= 'sample op) (compile-sample sub procs pred e)
       (= 'observe op) (compile-observe sub procs pred e)
       (contains? procs op) (compile-procedure-call sub procs pred e)
-      (or (contains? distributions op)
+      (or (contains? pmf op)
           (resolve op)) (compile-primitive-call sub procs pred e)
       :else [(empty-graph) e])))
 
