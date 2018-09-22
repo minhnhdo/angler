@@ -4,14 +4,14 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
             [angler.errors :refer [checked->]]
-            [angler.passes.compile :refer [compile-to-graph
-                                           edge-vector->adjacency-vector
-                                           topological-sort]]
+            [angler.passes.compile :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
             [angler.passes.validate :refer [validate]]
-            [angler.types :refer [count-edges count-vertices print-graph]])
+            [angler.types :refer [count-edges count-vertices print-graph
+                                  edge-vector->adjacency-vector
+                                  sample-from-joint topological-sort]])
   (:gen-class)
   (:import (java.io PushbackReader)))
 
@@ -25,7 +25,9 @@
     :default false]
    [nil "--count-edges" "Print the number of edges in the resulting graph"
     :default false]
-   [nil "--print-graph" "Print the resulting graph" :default false]])
+   [nil "--print-graph" "Print the resulting graph" :default false]
+   [nil "--sample-from-joint" "Print a sample from the joint distribution"
+    :default false]])
 
 (defn usage
   [option-summary]
@@ -78,6 +80,7 @@
               (:count-vertices options) (println (count-vertices graph))
               (:count-edges options) (println (count-edges graph))
               (:print-graph options) (print-graph graph)
+              (:sample-from-joint options) (println (sample-from-joint graph))
               :else (let [[{:keys [V A]}] output]
                       (pprint output)
                       (pprint
