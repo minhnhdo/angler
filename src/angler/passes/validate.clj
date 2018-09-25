@@ -131,7 +131,7 @@
   [ast]
   (cond
     (and (list? ast) (seq ast)) (validate-list ast)
-    (seq? ast) (or (params-helper ast) ast)
+    (seqable? ast) (or (params-helper ast) ast)
     (symbol? ast) (validate-identifier ast)
     :else ast))
 

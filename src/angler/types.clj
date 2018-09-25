@@ -36,6 +36,7 @@
   (cond
     (symbol? exp) false
     (and (list? exp) (seq exp)) (= 'list (first exp))
+    (seqable? exp) (every? value? exp)
     :else true))
 
 (defn- list-literal?
@@ -215,13 +216,13 @@
 (defn bind-free-variables
   [^IPersistentMap sub exp]
   (cond
-    (seq? exp) (apply (cond
-                        (list? exp) list
-                        (vector? exp) vector
-                        (map? exp) hash-map
-                        (set? exp) hash-set
-                        :else list)
-                      (map #(bind-free-variables sub %) exp))
+    (seqable? exp) (apply (cond
+                            (list? exp) list
+                            (vector? exp) vector
+                            (map? exp) hash-map
+                            (set? exp) hash-set
+                            :else list)
+                          (map #(bind-free-variables sub %) exp))
     (list? exp) (apply list (map #(bind-free-variables sub %) exp))
     (vector? exp) (apply vector (map #(bind-free-variables sub %) exp))
     (contains? sub exp) (sub exp)

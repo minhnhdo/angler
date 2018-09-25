@@ -1,6 +1,6 @@
 (ns angler.passes.compile
   (:require [clojure.set :refer [intersection union]]
-            [angler.errors :refer [checks compile-error]]
+            [angler.errors :refer [checks compile-error debug]]
             [angler.types :refer [built-ins distributions empty-graph join-graph
                                   new-graph peval]])
   (:import [angler.errors CompileError]))
@@ -19,7 +19,7 @@
   [procs ast]
   (cond
     (and (list? ast) (seq ast)) (free-vars-list procs ast)
-    (seq? ast) (apply union (map #(free-vars procs %) ast))
+    (seqable? ast) (apply union (map #(free-vars procs %) ast))
     (symbol? ast) (if (or (contains? procs ast)
                           (contains? built-ins ast))
                     #{}

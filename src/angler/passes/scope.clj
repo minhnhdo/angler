@@ -80,7 +80,7 @@
   [bound-syms exp]
   (cond
     (and (list? exp) (seq exp)) (scope-list bound-syms exp)
-    (seq? exp) (or (params-helper bound-syms exp) exp)
+    (seqable? exp) (or (params-helper bound-syms exp) exp)
     (symbol? exp) (scope-identifier bound-syms exp)
     :else exp))
 
