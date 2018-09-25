@@ -30,8 +30,12 @@
                   'observe* 'observe*
                   'sample 'sample}
                  pmf)
-          'eval
-          'for))
+          'map 'reduce
+          'filter 'keep 'keep-indexed 'remove
+          'repeatedly
+          'every? 'not-any? 'some
+          'every-pred 'some-fn
+          'comp 'juxt 'partial))
 
 (defn- value?
   [exp]
