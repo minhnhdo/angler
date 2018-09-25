@@ -60,24 +60,24 @@
 (defn compile-error
   [& args]
   {::error ::compile-error
-   ::message (apply str "Compilation error: " args)})
+   ::message (apply str args)})
 
 (defn graph-error
   [& args]
   {::error ::graph-error
-   ::message (apply str "Graph error: " args)})
+   ::message (apply str args)})
 
 (defn read-error
   [& args]
   {::error ::read-error
-   ::message (apply str "Reading error: " args)})
+   ::message (apply str args)})
 
 (defn scope-error
   [& args]
   {::error ::scope-error
-   ::message (apply str "Scoping error: " args)})
+   ::message (apply str args)})
 
 (defn validate-error
   [& args]
   {::error ::validate-error
-   ::message (apply str "Validation error: " args)})
+   ::message (apply str args)})
