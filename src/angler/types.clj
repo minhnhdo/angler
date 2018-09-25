@@ -111,10 +111,20 @@
         :else (let [resolved-op (built-ins op)]
                 (cond
                   (and (contains? #{'conj 'cons 'first 'rest 'last} op)
-                       (value? (first params)))
-                  (apply resolved-op params)
-                  (or (nil? resolved-op) (not (every? value? params)))
-                  (apply list op params)
+                       (let [[f] params]
+                         (or (list-literal? f)
+                             (vector? f)
+                             (map? f)
+                             (set? f)))) (apply resolved-op params)
+                  (and (contains? #{'get 'nth} op)
+                       (let [[f & others] params]
+                         (and (every? value? others)
+                              (or (list-literal? f)
+                                  (vector? f)
+                                  (map? f)
+                                  (set? f))))) (apply resolved-op params)
+                  (or (nil? resolved-op)
+                      (not (every? value? params))) (apply list op params)
                   :else (apply resolved-op params)))))
     exp))
 
