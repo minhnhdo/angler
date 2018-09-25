@@ -4,6 +4,10 @@
             [angler.errors :refer [checks scope-error]]
             [angler.types :refer [built-ins]]))
 
+(def ^:private scoped-built-ins
+  (into (set (keys built-ins))
+        ['sample 'observe 'if 'loop]))
+
 (defn- scope-identifier
   [bound-syms identifier]
   (if (or (= '_ identifier)
@@ -57,7 +61,8 @@
       (= 'foreach op) (let [[_ bindings & body] params]
                         (or (bindings-and-body-helper bound-syms bindings body)
                             list-exp))
-      (contains? built-ins op) (or (params-helper bound-syms params) list-exp)
+      (contains? scoped-built-ins op) (or (params-helper bound-syms params)
+                                          list-exp)
       (and (contains? bound-syms op)
            (:is-fn? (bound-syms op))) (let [{:keys [nargs]} (bound-syms op)]
                                         (or (when (not= (:nargs (bound-syms op))

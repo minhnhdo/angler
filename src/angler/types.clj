@@ -18,9 +18,7 @@
   (dissoc (merge (ns-publics 'clojure.core)
                  (ns-publics 'anglican.core)
                  (ns-publics 'anglican.runtime)
-                 (ns-publics 'angler.primitives)
-                 {'sample 'sample
-                  'observe 'observe})
+                 (ns-publics 'angler.primitives))
           'loop
           'map 'reduce
           'filter 'keep 'keep-indexed 'remove
