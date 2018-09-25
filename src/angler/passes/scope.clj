@@ -57,9 +57,7 @@
       (= 'foreach op) (let [[_ bindings & body] params]
                         (or (bindings-and-body-helper bound-syms bindings body)
                             list-exp))
-      (or (contains? built-ins op) (resolve op)) (or (params-helper bound-syms
-                                                                    params)
-                                                     list-exp)
+      (contains? built-ins op) (or (params-helper bound-syms params) list-exp)
       (and (contains? bound-syms op)
            (:is-fn? (bound-syms op))) (let [{:keys [nargs]} (bound-syms op)]
                                         (or (when (not= (:nargs (bound-syms op))
