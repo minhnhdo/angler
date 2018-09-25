@@ -19,11 +19,9 @@
                  (ns-publics 'anglican.core)
                  (ns-publics 'anglican.runtime)
                  (ns-publics 'angler.primitives)
-                 {'if 'if
-                  'loop 'loop
-                  'observe 'observe
-                  'observe* 'observe*
-                  'sample 'sample})
+                 {'sample 'sample
+                  'observe 'observe})
+          'loop
           'map 'reduce
           'filter 'keep 'keep-indexed 'remove
           'repeatedly
@@ -43,90 +41,111 @@
   [exp]
   (and (list? exp) (= 'list (first exp))))
 
-(defn peval
+(defn peval-once
   [exp]
-  (if (and (list? exp) (seq exp))
-    (let [[op & params] (map peval exp)]
+  (cond
+    (and (list? exp) (seq exp))
+    (let [peval-results (map peval-once exp)
+          [op & params] (map #(nth % 0) peval-results)
+          changed (boolean (some identity (map #(nth % 1) peval-results)))]
       (cond
-        (or (not (symbol? op)) (= 'list op)) (apply list op params)
+        (or (not (symbol? op)) (= 'list op)) [(apply list op params) changed]
         (contains? #{'hash-map 'hash-set 'vector} op)
-        (apply (built-ins op) params)
+        [(apply (built-ins op) params) true]
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
-            (not (value? cond-exp)) (list 'if cond-exp then-exp else-exp)
-            cond-exp (peval then-exp)
-            :else (peval else-exp)))
+            (not (value? cond-exp)) [(list 'if cond-exp then-exp else-exp)
+                                     changed]
+            cond-exp (peval-once then-exp)
+            :else (peval-once else-exp)))
 
         ; list operations
         (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
-        (- (count (first params)) 1)
+        [(- (count (first params)) 1) true]
 
         (and (= 'peek op) (list-literal? (first params)) (= 1 (count params)))
-        (let [[[_ f]] params] f)
+        [(let [[[_ f]] params] f) true]
 
         (and (= 'pop op) (list-literal? (first params)) (= 1 (count params)))
-        (apply list 'list (rest (rest (first params))))
+        [(apply list 'list (rest (rest (first params)))) true]
 
         (and (= 'list? op) (= 1 (count params)))
-        (let [[f] params]
-          (and (list? f) (= 'list (first f))))
+        [(let [[f] params] (and (list? f) (= 'list (first f)))) true]
 
         (and (= 'conj op) (list-literal? (first params)))
-        (let [[[_ & elems] & added] params]
-          (apply list 'list (into elems added)))
+        [(let [[[_ & elems] & added] params]
+           (apply list 'list (into elems added))) true]
 
         ; TODO list*
 
         ;; sequence operations on lists
 
         (and (= 'first op) (list-literal? (first params)) (= 1 (count params)))
-        (let [[[_ f]] params] f)
+        [(let [[[_ f]] params] f) true]
 
         (and (= 'second op) (list-literal? (first params)) (= 1 (count params)))
-        (let [[[_ _ s]] params] s)
+        [(let [[[_ _ s]] params] s) true]
 
         (and (= 'rest op) (list-literal? (first params)) (= 1 (count params)))
-        (let [[[_ _ & elems]] params] (apply list 'list elems))
+        [(let [[[_ _ & elems]] params] (apply list 'list elems)) true]
 
         ; last is correctly implemented by default
 
         (and (= 'cons op) (list-literal? (second params)) (= 2 (count params)))
-        (let [[elem [_ & elems]] params] (apply list 'list elem elems))
+        [(let [[elem [_ & elems]] params] (apply list 'list elem elems)) true]
 
         (and (= 'nth op)
              (list-literal? (first params))
              (= 2 (count params))
              (int? (second params))
              (<= 0 (second params) (- (count (first params)) 2)))
-        (nth (first params) (+ 1 (second params)))
+        [(nth (first params) (+ 1 (second params))) true]
 
         (and (= 'get op)
              (list-literal? (first params))
              (= 2 (count params))
              (int? (second params)))
-        (get (first params) (+ 1 (second params)))
+        [(get (first params) (+ 1 (second params))) true]
 
         ; try to perform primitive calls
         :else (let [resolved-op (built-ins op)]
                 (cond
-                  (and (contains? #{'conj 'cons 'first 'rest 'last} op)
-                       (let [[f] params]
-                         (or (list-literal? f)
-                             (vector? f)
-                             (map? f)
-                             (set? f)))) (apply resolved-op params)
+                  (and (contains? #{'append 'conj 'cons 'first
+                                    'second 'rest 'last}
+                                  op)
+                       (seqable? (first params))) [(apply resolved-op params)
+                                                   true]
                   (and (contains? #{'get 'nth} op)
                        (let [[f & others] params]
-                         (and (every? value? others)
-                              (or (list-literal? f)
-                                  (vector? f)
-                                  (map? f)
-                                  (set? f))))) (apply resolved-op params)
+                         (and (seqable? f)
+                              (not (and (or (list? f) (seq? f))
+                                        (contains? built-ins (first f))))
+                              (every? value?
+                                      others)))) [(apply resolved-op params)
+                                                  true]
                   (or (nil? resolved-op)
-                      (not (every? value? params))) (apply list op params)
-                  :else (apply resolved-op params)))))
-    exp))
+                      (not (every? value? params))) [(apply list op params)
+                                                     changed]
+                  :else [(apply resolved-op params) true]))))
+    (seqable? exp) (let [peval-results (map peval-once exp)
+                         contents (map #(nth % 0) peval-results)
+                         changed (boolean (some identity
+                                                (map #(nth % 1) peval-results)))]
+                     (cond
+                       (not changed) [exp false]
+                       (map? exp) [(apply hash-map (flatten contents)) true]
+                       (set? exp) [(set contents) true]
+                       (vector? exp) [(vec contents) true]
+                       :else [(apply list contents) true]))
+    :else [exp false]))
+
+(defn peval
+  [exp]
+  (loop [[result changed] [exp true]]
+    (if changed
+      (recur (peval-once result))
+      result)))
 
 (defn edge-vector->adjacency-vector
   [edges]
@@ -227,15 +246,13 @@
   [^IPersistentMap sub exp]
   (cond
     (satisfies? anglican.runtime/distribution exp) exp
-    (seqable? exp) (apply (cond
-                            (list? exp) list
-                            (vector? exp) vector
-                            (map? exp) hash-map
-                            (set? exp) hash-set
-                            :else list)
-                          (map #(bind-free-variables sub %) exp))
-    (list? exp) (apply list (map #(bind-free-variables sub %) exp))
-    (vector? exp) (apply vector (map #(bind-free-variables sub %) exp))
+    (seqable? exp) ((cond
+                      (vector? exp) vec
+                      (map? exp) #(apply into {} %)
+                      (set? exp) set
+                      (list? exp) #(apply list %)
+                      :else #(apply list %))
+                    (map #(bind-free-variables sub %) exp))
     (contains? sub exp) (sub exp)
     :else exp))
 
