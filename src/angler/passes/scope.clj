@@ -102,7 +102,7 @@
                 (pop program))
         scoped-exp (scope-expression bound-syms (peek program))
         errors (filter :angler.errors/error (conj (vec scoped-defns) scoped-exp))]
-    (if (empty? errors)
-      program
-      (scope-error
-        (string/join \newline (map :angler.errors/message errors))))))
+    (when (seq errors)
+      (println "WARN")
+      (println (string/join \newline (map :angler.errors/message errors))))
+    program))
