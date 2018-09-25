@@ -77,6 +77,10 @@
               (System/exit 2))
           (let [[graph] output]
             (cond
+              (or (:parse options)
+                  (:validate options)
+                  (:scope options)
+                  (:desugar options)) (pprint output)
               (:count-vertices options) (println (count-vertices graph))
               (:count-edges options) (println (count-edges graph))
               (:print-graph options) (print-graph graph)
