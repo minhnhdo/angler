@@ -3,7 +3,8 @@
             [clojure.set :refer [union]]
             [clojure.string :refer [ends-with? starts-with?]]
             [anglican core runtime]
-            [angler.errors :refer [graph-error]])
+            [angler.errors :refer [graph-error]]
+            angler.primitives)
   (:import (clojure.lang IPersistentSet IPersistentMap)))
 
 (def pmf
@@ -19,17 +20,18 @@
        (into {})))
 
 (def built-ins
-  (merge {'if 'if
-          'loop 'loop
-          'observe 'observe
-          'observe* 'observe*
-          'sample 'sample}
-         {'append (fn [& vectors]
-                    (apply into [] vectors))} ; fix for missing append
-         pmf
-         (ns-publics 'anglican.core)
-         (ns-publics 'anglican.runtime)
-         (ns-publics 'clojure.core)))
+  (dissoc (merge (ns-publics 'clojure.core)
+                 (ns-publics 'anglican.core)
+                 (ns-publics 'anglican.runtime)
+                 (ns-publics 'angler.primitives)
+                 {'if 'if
+                  'loop 'loop
+                  'observe 'observe
+                  'observe* 'observe*
+                  'sample 'sample}
+                 pmf)
+          'eval
+          'for))
 
 (defn- value?
   [exp]
