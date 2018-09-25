@@ -226,6 +226,7 @@
 (defn bind-free-variables
   [^IPersistentMap sub exp]
   (cond
+    (satisfies? anglican.runtime/distribution exp) exp
     (seqable? exp) (apply (cond
                             (list? exp) list
                             (vector? exp) vector
