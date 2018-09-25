@@ -7,17 +7,12 @@
             angler.primitives)
   (:import (clojure.lang IPersistentSet IPersistentMap)))
 
-(def pmf
+(def distributions
   (->> (ns-publics 'anglican.runtime)
-       (map #(let [[k v] %]
-               [(name k) v]))
-       (filter #(let [[k v] %]
-                  (and (starts-with? k "->")
-                       (ends-with? k "-distribution"))))
-       (map #(let [[k v] %
-                   l (count k)]
-               [(symbol (subs k 2 (- l 13))) v]))
-       (into {})))
+       (map #(name (nth % 0)))
+       (filter #(and (starts-with? % "->") (ends-with? % "-distribution")))
+       (map #(let [l (count %)] (symbol (subs % 2 (- l 13)))))
+       (into #{})))
 
 (def built-ins
   (dissoc (merge (ns-publics 'clojure.core)
@@ -28,8 +23,7 @@
                   'loop 'loop
                   'observe 'observe
                   'observe* 'observe*
-                  'sample 'sample}
-                 pmf)
+                  'sample 'sample})
           'map 'reduce
           'filter 'keep 'keep-indexed 'remove
           'repeatedly
