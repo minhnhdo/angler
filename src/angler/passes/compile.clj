@@ -13,12 +13,13 @@
     (if (= 'let op)
       (let [[[v e] body] params]
         (disj (union (free-vars procs e) (free-vars procs body)) v))
-      (apply union (map #(free-vars procs %) list-exp)))))
+      (apply union (map #(free-vars procs %) params)))))
 
 (defn free-vars
   [procs ast]
   (cond
     (and (list? ast) (seq ast)) (free-vars-list procs ast)
+    (seq? ast) (apply union (map #(free-vars procs %) ast))
     (symbol? ast) (if (or (contains? procs ast)
                           (contains? built-ins ast))
                     #{}
