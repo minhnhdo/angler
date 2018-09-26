@@ -11,7 +11,8 @@
             [angler.passes.validate :refer [validate]]
             [angler.types :refer [count-edges count-vertices print-graph
                                   edge-vector->adjacency-vector
-                                  sample-from-joint topological-sort]])
+                                  sample-from-joint sample-from-prior
+                                  topological-sort]])
   (:gen-class)
   (:import (java.io PushbackReader)))
 
@@ -27,6 +28,8 @@
     :default false]
    [nil "--print-graph" "Print the resulting graph" :default false]
    [nil "--sample-from-joint" "Print a sample from the joint distribution"
+    :default false]
+   [nil "--sample-from-prior" "Print a sample from the prior distribution"
     :default false]])
 
 (defn usage
@@ -84,9 +87,6 @@
               (:count-vertices options) (println (count-vertices graph))
               (:count-edges options) (println (count-edges graph))
               (:print-graph options) (print-graph graph)
-              (:sample-from-joint options) (println (sample-from-joint graph))
-              :else (let [[{:keys [V A]}] output]
-                      (pprint output)
-                      (pprint
-                        (topological-sort
-                          V (edge-vector->adjacency-vector (vec A))))))))))))
+              (:sample-from-joint options) (pprint (sample-from-joint graph))
+              (:sample-from-prior options) (pprint (sample-from-prior graph))
+              :else (pprint output))))))))

@@ -255,7 +255,7 @@
     :else exp))
 
 (defn sample-from-joint
-  [^Graph {:keys [P Y] :as graph}]
+  [^Graph {:keys [P] :as graph}]
   (loop [m {}
          to-do (ancestral-ordering graph)]
     (if (seq to-do)
@@ -267,4 +267,21 @@
                                 (peval (bind-free-variables m dist)))))]
         (recur (assoc m v sampled-value)
                new-to-do))
+      m)))
+
+(defn sample-from-prior
+  [^Graph {:keys [P Y] :as graph}]
+  (loop [m {}
+         to-do (ancestral-ordering graph)]
+    (if (seq to-do)
+      (let [[v & new-to-do] to-do]
+        (if (not (contains? Y v))
+          (let [sampled-value (let [[_ dist _] (P v)]
+                                (anglican.runtime/sample*
+                                  (if (satisfies? anglican.runtime/distribution dist)
+                                    dist
+                                    (peval (bind-free-variables m dist)))))]
+            (recur (assoc m v sampled-value)
+                   new-to-do))
+          (recur m new-to-do)))
       m)))
