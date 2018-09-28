@@ -18,10 +18,10 @@
 
 (def cli-options
   [["-h" "--help" "Print this help message" :default false]
-   [nil "--parse" "Run upto parsing only" :default false]
-   [nil "--validate" "Run upto validation only" :default false]
-   [nil "--scope" "Run upto scoping only" :default false]
-   [nil "--desugar" "Run upto desugaring only" :default false]
+   [nil "--parse" "Run up to parsing only" :default false]
+   [nil "--validate" "Run up to validation only" :default false]
+   [nil "--scope" "Run up to scoping only" :default false]
+   [nil "--desugar" "Run up to desugaring only" :default false]
    [nil "--count-vertices" "Print the number of vertices in the resulting graph"
     :default false]
    [nil "--count-edges" "Print the number of edges in the resulting graph"
