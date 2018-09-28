@@ -36,7 +36,7 @@
   [option-summary]
   (->> ["Angler - a probabilistic programming language"
         ""
-        "Usage: program-name [options] [input-files|-]..."
+        "Usage: program-name [options] <input-files|->..."
         ""
         "Options:"
         option-summary]
