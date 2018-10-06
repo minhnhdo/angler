@@ -132,7 +132,7 @@
                                                 (map #(nth % 1) peval-results)))]
                      (cond
                        (not changed) [exp false]
-                       (map? exp) [(apply hash-map (flatten contents)) true]
+                       (map? exp) [(apply into {} contents) true]
                        (set? exp) [(set contents) true]
                        (vector? exp) [(vec contents) true]
                        :else [(apply list contents) true]))
