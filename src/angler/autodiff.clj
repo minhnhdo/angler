@@ -15,6 +15,8 @@
          :deriv-fns [(fn [a] ((get built-ins 'exp) a))]}
    'log {:func (get built-ins 'log)
          :deriv-fns [(fn [a] (/ 1 a))]}
+   'sqrt {:func (get built-ins 'sqrt)
+          :deriv-fns [(fn [a] (/ 1 (* 2 ((get built-ins 'sqrt) a))))]}
    'relu {:func (fn [a] (max 0 a))
           :deriv-fns [(fn [a] (if (> a 0) 1 0))]}
    'sin {:func (get built-ins 'sin)
