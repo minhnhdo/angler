@@ -50,7 +50,7 @@
                                  variance (* sigma sigma)]
                              (- (/ (* (- sigma mu-x)
                                       (+ sigma mu-x)
-                                      ((get built-ins 'exp) (/ (* mu-x mu-x)
+                                      ((get built-ins 'exp) (/ (- (* mu-x mu-x))
                                                                (* 2 variance))))
                                    (* ((get built-ins 'sqrt) (* 2 Math/PI))
                                       variance
