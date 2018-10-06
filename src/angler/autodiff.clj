@@ -3,64 +3,64 @@
   (:import [clojure.lang IPersistentList IPersistentMap ISeq]))
 
 (def ^:private supported-operations
-  {'+ {:fn (get built-ins '+)
-       :derivatives [(fn [a b] 1) (fn [a b] 1)]}
-   '- {:fn (get built-ins '-)
-       :derivatives [(fn [a b] 1) (fn [a b] -1)]}
-   '* {:fn (get built-ins '*)
-       :derivatives [(fn [a b] b) (fn [a b] a)]}
-   '/ {:fn (get built-ins '/)
-       :derivatives [(fn [a b] (/ 1 b)) (fn [a b] (* a (/ -1 (* b b))))]}
-   'exp {:fn (get built-ins 'exp)
-         :derivatives [(fn [a] ((get built-ins 'exp) a))]}
-   'log {:fn (get built-ins 'log)
-         :derivatives [(fn [a] (/ 1 a))]}
-   'relu {:fn (fn [a] (max 0 a))
-          :derivatives [(fn [a] (if (> a 0) 1 0))]}
-   'sin {:fn (get built-ins 'sin)
-         :derivatives [(fn [a] ((get built-ins 'cos) a))]}
-   'cos {:fn (get built-ins 'cos)
-         :derivatives [(fn [a] (- ((get built-ins 'sin) a)))]}
-   'normpdf {:fn (fn [x mu sigma]
-                   (let [x-mu (- x mu)
-                         two-variance (* 2 sigma sigma)]
-                     (* (/ 1 ((get built-ins 'sqrt) (* Math/PI two-variance)))
-                        ((get built-ins 'exp) (- (/ (* x-mu x-mu)
-                                                    two-variance))))))
-             :derivatives [(fn [x mu sigma]
-                             (let [mu-x (- mu x)
-                                   variance (* sigma sigma)]
-                               (/ (* mu-x
-                                     ((get built-ins 'exp) (- (/ (* mu-x mu-x)
-                                                                 (* 2 variance)))))
-                                  (* ((get built-ins 'sqrt) (* 2 Math/PI))
-                                     variance
-                                     sigma))))
-                           (fn [x mu sigma]
-                             (let [mu-x (- mu x)
-                                   variance (* sigma sigma)]
-                               (/ (* (- mu-x)
-                                     ((get built-ins 'exp) (- (/ (* mu-x mu-x)
-                                                                 (* 2 variance)))))
-                                  (* ((get built-ins 'sqrt) (* 2 Math/PI))
-                                     variance
-                                     sigma))))
-                           (fn [x mu sigma]
-                             (let [mu-x (- mu x)
-                                   variance (* sigma sigma)]
-                               (- (/ (* (- sigma mu-x)
-                                        (+ sigma mu-x)
-                                        ((get built-ins 'exp) (/ (* mu-x mu-x)
-                                                                 (* 2 variance))))
-                                  (* ((get built-ins 'sqrt) (* 2 Math/PI))
-                                     variance
-                                     variance)))))]}
-   '= {:fn (get built-ins '=)}
-   '> {:fn (get built-ins '>)}
-   '< {:fn (get built-ins '<)}
-   '>= {:fn (get built-ins '>=)}
-   '<= {:fn (get built-ins '<=)}
-   'not {:fn (get built-ins 'not)}})
+  {'+ {:func (get built-ins '+)
+       :deriv-fns [(fn [a b] 1) (fn [a b] 1)]}
+   '- {:func (get built-ins '-)
+       :deriv-fns [(fn [a b] 1) (fn [a b] -1)]}
+   '* {:func (get built-ins '*)
+       :deriv-fns [(fn [a b] b) (fn [a b] a)]}
+   '/ {:func (get built-ins '/)
+       :deriv-fns [(fn [a b] (/ 1 b)) (fn [a b] (* a (/ -1 (* b b))))]}
+   'exp {:func (get built-ins 'exp)
+         :deriv-fns [(fn [a] ((get built-ins 'exp) a))]}
+   'log {:func (get built-ins 'log)
+         :deriv-fns [(fn [a] (/ 1 a))]}
+   'relu {:func (fn [a] (max 0 a))
+          :deriv-fns [(fn [a] (if (> a 0) 1 0))]}
+   'sin {:func (get built-ins 'sin)
+         :deriv-fns [(fn [a] ((get built-ins 'cos) a))]}
+   'cos {:func (get built-ins 'cos)
+         :deriv-fns [(fn [a] (- ((get built-ins 'sin) a)))]}
+   'normpdf {:func (fn [x mu sigma]
+                     (let [x-mu (- x mu)
+                           two-variance (* 2 sigma sigma)]
+                       (* (/ 1 ((get built-ins 'sqrt) (* Math/PI two-variance)))
+                          ((get built-ins 'exp) (- (/ (* x-mu x-mu)
+                                                      two-variance))))))
+             :deriv-fns [(fn [x mu sigma]
+                           (let [mu-x (- mu x)
+                                 variance (* sigma sigma)]
+                             (/ (* mu-x
+                                   ((get built-ins 'exp) (- (/ (* mu-x mu-x)
+                                                               (* 2 variance)))))
+                                (* ((get built-ins 'sqrt) (* 2 Math/PI))
+                                   variance
+                                   sigma))))
+                         (fn [x mu sigma]
+                           (let [mu-x (- mu x)
+                                 variance (* sigma sigma)]
+                             (/ (* (- mu-x)
+                                   ((get built-ins 'exp) (- (/ (* mu-x mu-x)
+                                                               (* 2 variance)))))
+                                (* ((get built-ins 'sqrt) (* 2 Math/PI))
+                                   variance
+                                   sigma))))
+                         (fn [x mu sigma]
+                           (let [mu-x (- mu x)
+                                 variance (* sigma sigma)]
+                             (- (/ (* (- sigma mu-x)
+                                      (+ sigma mu-x)
+                                      ((get built-ins 'exp) (/ (* mu-x mu-x)
+                                                               (* 2 variance))))
+                                   (* ((get built-ins 'sqrt) (* 2 Math/PI))
+                                      variance
+                                      variance)))))]}
+   '= {:func (get built-ins '=)}
+   '> {:func (get built-ins '>)}
+   '< {:func (get built-ins '<)}
+   '>= {:func (get built-ins '>=)}
+   '<= {:func (get built-ins '<=)}
+   'not {:func (get built-ins 'not)}})
 
 (defn- autodiff-forward
   ^IPersistentMap
@@ -79,7 +79,7 @@
                       real-args (map :primal args)]
                   {:fn-name fn-name
                    :args args
-                   :primal (apply (get-in supported-operations [fn-name :fn])
+                   :primal (apply (get-in supported-operations [fn-name :func])
                                   real-args)})
     (symbol? exp) {:is-arg? true
                    :arg exp
