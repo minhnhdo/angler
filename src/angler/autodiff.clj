@@ -89,8 +89,29 @@
     :else {:is-const? true
            :primal exp}))
 
+(defn- autodiff-backward
+  ^IPersistentMap
+  [^IPersistentMap graph deriv]
+  (if (or (:is-arg? graph) (:is-const? graph))
+    (assoc graph :deriv deriv)
+    (let [{:keys [fn-name args]} graph
+          primal-args (map :primal args)
+          deriv-fns (get-in supported-operations [fn-name :deriv-fns])
+          derivs (map #(* deriv (apply % primal-args)) deriv-fns)
+          new-args (map #(autodiff-backward %1 %2) args derivs)]
+      (assoc graph :args new-args :deriv deriv))))
+
+(defn- collect-args
+  ^IPersistentMap
+  [^IPersistentMap graph]
+  (cond
+    (:is-arg? graph) {(:arg graph) (:deriv graph)}
+    (:fn-name graph) (apply merge-with + (map collect-args (:args graph)))
+    :else {}))
+
 (defn autodiff
   [^IPersistentList f ^ISeq args]
   (let [[_ params body] f
-        sub (apply hash-map (interleave params args))]
-    (println (autodiff-forward sub body))))
+        sub (apply hash-map (interleave params args))
+        graph (autodiff-backward (autodiff-forward sub body)1)]
+    [(:primal graph) (collect-args graph)]))
