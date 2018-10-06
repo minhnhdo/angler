@@ -3,7 +3,8 @@
             [angler.errors :refer [checks compile-error]]
             [angler.types :refer [built-ins distributions empty-graph join-graph
                                   new-graph peval]])
-  (:import [angler.errors CompileError]))
+  (:import [clojure.lang IPersistentMap IPersistentVector]
+           [angler.errors CompileError]))
 
 (declare free-vars)
 
@@ -38,7 +39,8 @@
     :else (throw (CompileError. (str "Unexpected " exp)))))
 
 (defn- compile-identifier
-  [sub _ _ identifier]
+  ^IPersistentVector
+  [^IPersistentMap sub _ _ identifier]
   [(empty-graph)
    (if (contains? sub identifier)
      (sub identifier)
@@ -47,7 +49,8 @@
 (declare compile-expression)
 
 (defn- compile-let
-  [sub procs pred let-exp]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred let-exp]
   (let [[_ [v e] body] let-exp
         [graph-e compiled-e] (compile-expression sub procs pred e)
         [graph-body compiled-body]
@@ -55,7 +58,8 @@
     [(join-graph graph-e graph-body) compiled-body]))
 
 (defn- compile-if
-  [sub procs pred if-exp]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred if-exp]
   (let [[_ cond-exp then-exp else-exp] if-exp
         [graph-cond compiled-cond] (compile-expression sub procs pred cond-exp)
         [graph-then compiled-then]
@@ -66,7 +70,8 @@
      (peval (list 'if compiled-cond compiled-then compiled-else))]))
 
 (defn- compile-sample
-  [sub procs pred sample-exp]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred sample-exp]
   (let [[_ e] sample-exp
         [{:keys [V A P Y]} compiled-e] (compile-expression sub procs pred e)
         v (gensym)
@@ -79,7 +84,8 @@
      v]))
 
 (defn- compile-observe
-  [sub procs pred observe-exp]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred observe-exp]
   (let [[_ e1 e2] observe-exp
         [graph-e1 compiled-e1] (compile-expression sub procs pred e1)
         [graph-e2 compiled-e2] (compile-expression sub procs pred e2)
@@ -98,7 +104,8 @@
        compiled-e2])))
 
 (defn- compile-procedure-call
-  [sub procs pred call-exp]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred call-exp]
   (let [[fn-name & params] call-exp
         [_ _ arguments body] (procs fn-name)
         compiled-results (map #(compile-expression sub procs pred %) params)
@@ -110,7 +117,8 @@
      compiled-body]))
 
 (defn- compile-primitive-call
-  [sub procs pred call-exp]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred call-exp]
   (let [[op & params] call-exp
         compiled-results (map #(compile-expression sub procs pred %) params)
         graphs (map #(nth % 0) compiled-results)
@@ -119,7 +127,8 @@
      (peval (apply list op compiled-exps))]))
 
 (defn- compile-list
-  [sub procs pred e]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred e]
   (let [[op] e]
     (cond
       (= 'let op) (compile-let sub procs pred e)
@@ -131,7 +140,8 @@
       :else [(empty-graph) e])))
 
 (defn- compile-expression
-  [sub procs pred e]
+  ^IPersistentVector
+  [^IPersistentMap sub ^IPersistentMap procs pred e]
   (cond
     (and (list? e) (seq e)) (compile-list sub procs pred e)
     (symbol? e) (compile-identifier sub procs pred e)

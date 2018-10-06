@@ -1,5 +1,6 @@
 (ns angler.autodiff
-  (:require [angler.types :refer [built-ins]]))
+  (:require [angler.types :refer [built-ins]])
+  (:import [clojure.lang IPersistentList IPersistentMap ISeq]))
 
 (def ^:private supported-operations
   {'+ {:fn (get built-ins '+)
@@ -62,7 +63,8 @@
    'not {:fn (get built-ins 'not)}})
 
 (defn- autodiff-forward
-  [sub exp]
+  ^IPersistentMap
+  [^IPersistentMap sub exp]
   ;; repr {:fn-name fn-name, :args [args...], :primal primal}
   ;;   or {:is-const? true, :primal const}
   ;;   or {:is-arg? true, :arg arg, :primal const}
@@ -86,7 +88,7 @@
            :primal exp}))
 
 (defn autodiff
-  [f args]
+  [^IPersistentList f ^ISeq args]
   (let [[_ params body] f
         sub (apply hash-map (interleave params args))]
     (println (autodiff-forward sub body))))

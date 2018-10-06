@@ -5,7 +5,7 @@
             [anglican core runtime]
             [angler.errors :refer [graph-error]]
             angler.primitives)
-  (:import (clojure.lang IPersistentSet IPersistentMap)))
+  (:import [clojure.lang IPersistentMap IPersistentSet IPersistentVector]))
 
 (def distributions
   (->> (ns-publics 'anglican.runtime)
@@ -40,6 +40,7 @@
   (and (list? exp) (= 'list (first exp))))
 
 (defn peval-once
+  ^IPersistentVector
   [exp]
   (cond
     (and (list? exp) (seq exp))
