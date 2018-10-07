@@ -41,15 +41,17 @@
           (is (= 1 (count m)))
           (is (d= (func input) result 0.000001))
           (is (d= (deriv input) x 0.000001))))))
-  (testing "(fn [x] (+ (* x x) (sin x)))"
-    (letfn [(func [x] (+ (* x x) ((get built-ins 'sin) x)))
-            (deriv [x] (+ (* 2 x) ((get built-ins 'cos) x)))]
-      (doseq [input (range (- Math/PI) Math/PI 0.314)]
-        (let [[result {:syms [x] :as m}]
-              (autodiff '(fn [x] (+ (* x x) (sin x))) [input])]
-          (is (= 1 (count m)))
-          (is (d= (func input) result 0.000001))
-          (is (d= (deriv input) x 0.000001))))))
+  (testing "(fn [x y] (+ (* x x) (sin x)))"
+    (letfn [(func [x y] (+ (* x x) ((get built-ins 'sin) x)))
+            (dx [x y] (+ (* 2 x) ((get built-ins 'cos) x)))
+            (dy [x y] 0)]
+      (doseq [ix (range (- Math/PI) Math/PI 0.314)]
+        (let [[result {:syms [x y] :as m}]
+              (autodiff '(fn [x y] (+ (* x x) (sin x))) [ix 0])]
+          (is (= 2 (count m)))
+          (is (d= (func ix 0) result 0.000001))
+          (is (d= (dx ix 0) x 0.000001))
+          (is (d= (dy ix 0) y 0.000001))))))
   (testing "(fn [x] (if (> x 5) (* x x) (+ x 18)))"
     (letfn [(func [x] (if (> x 5) (* x x) (+ x 18)))
             (deriv [x] (if (> x 5) (* 2 x) 1))]

@@ -114,4 +114,5 @@
   (let [[_ params body] f
         sub (apply hash-map (interleave params args))
         graph (autodiff-backward (autodiff-forward sub body)1)]
-    [(:primal graph) (collect-args graph)]))
+    [(:primal graph) (merge (into {} (map #(vector % 0) params))
+                            (collect-args graph))]))
