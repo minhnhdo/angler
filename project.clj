@@ -1,4 +1,4 @@
-(defproject angler "1.1.2"
+(defproject angler "1.1.3"
   :description "Angler - a probabilistic programming language"
   :url "https://github.com/mrordinaire/angler"
   :license {:name "Eclipse Public License"
