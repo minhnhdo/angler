@@ -99,3 +99,39 @@
         graph (autodiff-backward (autodiff-forward sub body)1)]
     [(:primal graph) (merge (into {} (map #(vector % 0) params))
                             (collect-args graph))]))
+
+(def p1
+  '(fn [x]
+     (exp (sin x))))
+
+(def p2
+  '(fn [x y]
+     (+ (* x x) (sin x))))
+
+(def p3
+  '(fn [x]
+     (if (> x 5)
+       (* x x)
+       (+ x 18))))
+
+(def p4
+  '(fn [x]
+     (log x)))
+
+(def p5
+  '(fn [x mu sigma]
+     (+ (- 0 (/ (* (- x mu) (- x mu))
+                (* 2 (* sigma sigma))))
+        (* (- 0 (/ 1 2)) (log (* 2 (* 3.141592653589793 (* sigma sigma))))))))
+
+(def p6
+  '(fn [x mu sigma]
+     (normpdf x mu sigma)))
+
+(def p7
+  '(fn [x1 x2 x3]
+     (+ (+ (normpdf x1 2 5)
+           (if (> x2 7)
+             (normpdf x2 0 1)
+             (normpdf x2 10 1)))
+        (normpdf x3 -4 10))))
