@@ -26,37 +26,20 @@
    'normpdf {:func (fn [x mu sigma]
                      (let [x-mu (- x mu)
                            two-variance (* 2 sigma sigma)]
-                       (* (/ 1 ((get built-ins 'sqrt) (* Math/PI two-variance)))
-                          ((get built-ins 'exp) (- (/ (* x-mu x-mu)
-                                                      two-variance))))))
+                       ((get built-ins 'log)
+                        (* (/ 1 ((get built-ins 'sqrt) (* Math/PI two-variance)))
+                           ((get built-ins 'exp) (- (/ (* x-mu x-mu)
+                                                       two-variance)))))))
              :deriv-fns [(fn [x mu sigma]
-                           (let [mu-x (- mu x)
-                                 variance (* sigma sigma)]
-                             (/ (* mu-x
-                                   ((get built-ins 'exp) (- (/ (* mu-x mu-x)
-                                                               (* 2 variance)))))
-                                (* ((get built-ins 'sqrt) (* 2 Math/PI))
-                                   variance
-                                   sigma))))
+                           (/ (- mu x)
+                              (* sigma sigma)))
                          (fn [x mu sigma]
-                           (let [mu-x (- mu x)
-                                 variance (* sigma sigma)]
-                             (/ (* (- mu-x)
-                                   ((get built-ins 'exp) (- (/ (* mu-x mu-x)
-                                                               (* 2 variance)))))
-                                (* ((get built-ins 'sqrt) (* 2 Math/PI))
-                                   variance
-                                   sigma))))
+                           (/ (- x mu)
+                              (* sigma sigma)))
                          (fn [x mu sigma]
-                           (let [mu-x (- mu x)
-                                 variance (* sigma sigma)]
-                             (- (/ (* (- sigma mu-x)
-                                      (+ sigma mu-x)
-                                      ((get built-ins 'exp) (/ (- (* mu-x mu-x))
-                                                               (* 2 variance))))
-                                   (* ((get built-ins 'sqrt) (* 2 Math/PI))
-                                      variance
-                                      variance)))))]}
+                           (/ (- (* (- x mu) (- x mu))
+                                 (* sigma sigma))
+                              (* sigma sigma sigma)))]}
    '= {:func (get built-ins '=)}
    '> {:func (get built-ins '>)}
    '< {:func (get built-ins '<)}
