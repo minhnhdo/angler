@@ -103,8 +103,8 @@
     (let [[result {:syms [x mu sigma] :as m}]
           (autodiff '(fn [x mu sigma] (normpdf x mu sigma))
                     [0.5 0 1])]
-      (is (d= 0.352 result 0.0005))
-      (is (d= -0.176 x 0.0005))
-      (is (d= 0.176 mu 0.0005))
-      (is (d= -0.264 sigma 0.0005))
+      (is (d= -1.0439 result 0.0005))
+      (is (d= -0.5 x 0.0005))
+      (is (d= 0.5 mu 0.0005))
+      (is (d= -0.75 sigma 0.0005))
       (is (= 3 (count m))))))
