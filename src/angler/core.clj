@@ -5,7 +5,7 @@
             [clojure.string :as string]
             [clojure.tools.cli :refer [parse-opts]]
             [angler.autodiff :refer [autodiff p1 p2 p3 p4 p5 p6 p7]]
-            [angler.errors :refer [checked->]]
+            [angler.errors :refer [check-error checked->]]
             [angler.passes.compile :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
@@ -55,10 +55,6 @@
                (System/exit 1))
     (nil? (seq arguments)) (assoc parsed-options :arguments ["-"])
     :else parsed-options))
-
-(defn check-error
-  [r]
-  (not (:angler.errors/error r)))
 
 (defn -main
   [& args]

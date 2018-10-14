@@ -2,17 +2,8 @@
   (:require [clojure.string :as s]
             [clojure.test :refer :all]
             [angler.autodiff :refer [autodiff]]
-            [angler.types :refer [built-ins]]))
-
-(defn abs
-  [x]
-  (if (< x 0)
-    (- x)
-    x))
-
-(defn d=
-  [^double x ^double y ^double e]
-  (< (abs (- x y)) e))
+            [angler.types :refer [built-ins]]
+            [angler.test-utils :refer [d=]]))
 
 (deftest normpdf
   (testing "normpdf"

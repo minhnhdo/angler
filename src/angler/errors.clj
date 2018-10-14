@@ -52,6 +52,10 @@
                     rev-checks)
             1))))
 
+(defn check-error
+  [r]
+  (not (:angler.errors/error r)))
+
 (defn debug
   [x]
   (println x)
@@ -65,6 +69,11 @@
 (defn graph-error
   [& args]
   {::error ::graph-error
+   ::message (apply str args)})
+
+(defn query-error
+  [& args]
+  {::error ::query-error
    ::message (apply str args)})
 
 (defn read-error

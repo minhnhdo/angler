@@ -279,7 +279,7 @@
     :else exp))
 
 (defn sample-from-joint
-  ([^Graph {:keys [P Y]} ^IPersistentList ordering]
+  ([^Graph {:keys [P]} ^IPersistentList ordering]
    (loop [m {}
           to-do ordering]
      (if (seq to-do)

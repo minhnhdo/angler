@@ -1,8 +1,7 @@
 (ns angler.core-test
   (:require [clojure.java.io :as io]
             [clojure.test :refer :all]
-            [angler.core :refer [check-error]]
-            [angler.errors :refer [checked->]]
+            [angler.errors :refer [check-error checked->]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]
