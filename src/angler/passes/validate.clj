@@ -21,7 +21,7 @@
 (defn- validate-list
   [ast]
   (let [op (first ast)
-        validated-params (mapv validate-expression (rest ast))
+        validated-params (map validate-expression (rest ast))
         errors (filter :angler.errors/error validated-params)]
     (cond
       (seq errors) (validate-error
@@ -171,10 +171,10 @@
   [exps]
   (checks
     [(seq exps) (validate-error "Empty program")]
-    (let [validated-defns (mapv validate-defn (pop exps))
+    (let [validated-defns (map validate-defn (pop exps))
           validated-exp (validate-expression (peek exps))
           errors (filter :angler.errors/error
-                         (conj validated-defns validated-exp))]
+                         (conj (vec validated-defns) validated-exp))]
       (checks
         [(empty? errors)
          (validate-error

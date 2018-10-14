@@ -55,7 +55,7 @@
 (defn- desugar-list
   [e]
   (let [[op & params] e
-        desugared-params (mapv desugar-expression params)]
+        desugared-params (map desugar-expression params)]
     (cond
       (= 'if op) (list 'if (nth desugared-params 0)
                        (nth desugared-params 1)
