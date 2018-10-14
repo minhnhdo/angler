@@ -1,6 +1,6 @@
 (ns angler.primitives
   (:require [clojure.core.matrix :as m]
-            [anglican.runtime :refer [tanh]]))
+            [anglican.runtime :refer [defdist tanh]]))
 
 (defn append
   [& args]
@@ -30,3 +30,9 @@
   [M r c]
   (let [R (reduce (partial m/join-along 0) (repeat r M))]
     (reduce (partial m/join-along 1) (repeat c R))))
+
+(defdist dirac [x] []
+  (sample* [this] x)
+  (observe* [this value] (if (= value x)
+                           0
+                           (- (/ 1.0 0.0)))))

@@ -125,7 +125,6 @@
   '[(let [sprinkler true
           wet-grass true
           is-cloudy (sample (flip 0.5))
-
           is-raining (if (= is-cloudy true )
                        (sample (flip 0.8))
                        (sample (flip 0.2)))
