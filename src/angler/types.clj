@@ -147,6 +147,27 @@
       (recur (peval-once result))
       result)))
 
+(declare free-vars)
+
+(defn- free-vars-list
+  [procs list-exp]
+  (let [[op & params] list-exp]
+    (if (= 'let op)
+      (let [[[v e] body] params]
+        (disj (union (free-vars procs e) (free-vars procs body)) v))
+      (apply union (map #(free-vars procs %) params)))))
+
+(defn free-vars
+  [procs ast]
+  (cond
+    (and (list? ast) (seq ast)) (free-vars-list procs ast)
+    (seqable? ast) (apply union (map #(free-vars procs %) ast))
+    (symbol? ast) (if (or (contains? procs ast)
+                          (contains? built-ins ast))
+                    #{}
+                    #{ast})
+    :else #{}))
+
 (defn edge-vector->adjacency-vector
   [edges]
   (loop [result {}

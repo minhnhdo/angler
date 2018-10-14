@@ -1,31 +1,10 @@
 (ns angler.passes.compile
   (:require [clojure.set :refer [intersection union]]
             [angler.errors :refer [checks compile-error]]
-            [angler.types :refer [built-ins distributions empty-graph join-graph
-                                  new-graph peval]])
+            [angler.types :refer [built-ins distributions empty-graph free-vars
+                                  join-graph new-graph peval]])
   (:import [clojure.lang IPersistentMap IPersistentVector]
            [angler.errors CompileError]))
-
-(declare free-vars)
-
-(defn- free-vars-list
-  [procs list-exp]
-  (let [[op & params] list-exp]
-    (if (= 'let op)
-      (let [[[v e] body] params]
-        (disj (union (free-vars procs e) (free-vars procs body)) v))
-      (apply union (map #(free-vars procs %) params)))))
-
-(defn free-vars
-  [procs ast]
-  (cond
-    (and (list? ast) (seq ast)) (free-vars-list procs ast)
-    (seqable? ast) (apply union (map #(free-vars procs %) ast))
-    (symbol? ast) (if (or (contains? procs ast)
-                          (contains? built-ins ast))
-                    #{}
-                    #{ast})
-    :else #{}))
 
 (defn- score
   [exp v]
