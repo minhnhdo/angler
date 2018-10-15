@@ -51,7 +51,7 @@
    (let [P-dist (into {} (map #(let [[k [_ dist _]] %] [k dist]) P))
          X (apply dissoc P-dist (keys Y))
          chi (into (sample-from-prior graph) Y)]
-     (lazy-seq (cons chi (gibbs-sampling P-dist X chi)))))
+     (gibbs-sampling P-dist X chi)))
   ([^IPersistentMap P ^IPersistentMap X ^IPersistentMap chi]
    (let [new-chi (gibbs-step P X chi)]
      (lazy-seq (cons new-chi (gibbs-sampling P X new-chi))))))
