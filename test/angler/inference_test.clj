@@ -83,12 +83,12 @@
     (observe wet-grass-dist wet-grass)
     is-raining))
 
-#_(with-primitive-procedures [dirac]
-    (defquery anglican-p5 []
-      (let [x (sample (normal 0 10))
-            y (sample (normal 0 10))]
-        (observe (dirac (+ x y)) 7)
-        [x y])))
+(with-primitive-procedures [dirac]
+  (defquery anglican-p5 []
+    (let [x (sample (normal 0 10))
+          y (sample (normal 0 10))]
+      (observe (dirac (+ x y)) 7)
+      [x y])))
 
 (deftest program-1
   (testing "program 1 with Gibbs sampling"
@@ -104,11 +104,11 @@
       (is (d= ref-slope slope (abs-no-branching (* 0.05 ref-slope))))
       (is (d= ref-bias bias (abs-no-branching (* 0.05 ref-bias)))))))
 
-(deftest program-4
-  (testing "program 4 with Gibbs sampling"
-    (let [reference ((anglican-query :rmh anglican-p2 1000) true)
-          result ((angler-query :gibbs p2 1000) true)]
-      (is (d= reference result (abs-no-branching (* 0.05 reference)))))))
+#_(deftest program-4
+    (testing "program 4 with Gibbs sampling"
+      (let [reference ((anglican-query :rmh anglican-p2 1000) true)
+            result ((angler-query :gibbs p2 1000) true)]
+        (is (d= reference result (abs-no-branching (* 0.05 reference)))))))
 
 #_(deftest program-5
     (testing "program 5 with Gibbs sampling"
