@@ -109,6 +109,9 @@
           r-std (std reference)
           m (mean result)
           s (std result)]
+      (println "program 1")
+      (println "reference" r-mean r-std)
+      (println "result" m s)
       (is (d=5% r-mean m))
       (is (d=5% r-std s)))))
 
@@ -126,6 +129,11 @@
           slope-std (std (map first result))
           bias-mean (mean (map second result))
           bias-std (std (map second result))]
+      (println "program 2")
+      (println "reference slope" r-slope-mean r-slope-std)
+      (println "reference bias" r-bias-mean r-bias-std)
+      (println "result slope" slope-mean slope-std)
+      (println "result bias" bias-mean bias-std)
       (is (d=5% r-slope-mean slope-mean))
       (is (d=5% r-slope-std slope-std))
       (is (d=5% r-bias-mean bias-mean))
@@ -146,6 +154,9 @@
                                           :burn-in burn-in))
           r-prob-raining (/ (r-freq true) (apply + (vals r-freq)))
           prob-raining (/ (freq true) (apply + (vals freq)))]
+      (println "program 4")
+      (println "reference" r-freq)
+      (println "result" freq)
       (is (d=5% r-prob-raining prob-raining)))))
 
 (deftest program-5
@@ -163,6 +174,7 @@
           x-variance (variance (map first result))
           y-mean (mean (map second result))
           y-variance (variance (map second result))]
+      (println "program 5")
       (println "mean(x) =" x-mean)
       (println "variance(x) =" x-variance)
       (println "mean(y) =" y-mean)
