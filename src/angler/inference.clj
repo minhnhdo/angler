@@ -26,11 +26,13 @@
         Vx (dependents P x)]
     (exp (apply +
                 loga
-                (map #(let [ve (P %)]
-                        (- (observe* (peval (bind-free-variables new-chi ve))
-                                     (new-chi %))
-                           (observe* (peval (bind-free-variables chi ve))
-                                     (chi %))))
+                (map #(let [ve (P %)
+                            new-de (peval (bind-free-variables new-chi ve))
+                            de (peval (bind-free-variables chi ve))]
+                        (if (and de new-de)
+                          (- (observe* new-de (new-chi %))
+                             (observe* de (chi %)))
+                          Double/NEGATIVE_INFINITY))
                      Vx)))))
 
 (defn- gibbs-step
@@ -76,14 +78,7 @@
               (map
                 (fn [^IPersistentMap sub]
                   {:result (bind-free-variables sub result)
-                   :log-weight (apply +
-                                      (map
-                                        #(let [[k [_ dist _]] %]
-                                           (observe*
-                                             (peval
-                                               (bind-free-variables sub dist))
-                                             (sub k)))
-                                        P))})
+                   :log-weight 0.0})
                 (alg graph))))))
 
 (def p1
