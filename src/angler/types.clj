@@ -305,7 +305,7 @@
                                  (anglican.runtime/sample*
                                    (if (satisfies? anglican.runtime/distribution dist)
                                      dist
-                                     (peval (bind-free-variables m dist)))))]
+                                     (peval (bind-free-variables (into m Y) dist)))))]
              (recur (assoc m v sampled-value)
                     new-to-do))
            (recur m new-to-do)))
