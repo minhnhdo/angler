@@ -62,15 +62,21 @@
             cond-exp (peval-once then-exp)
             :else (peval-once else-exp)))
 
-        (= 'or op) (cond
-                     (some true? params) [true true]
-                     (every? false? params) [false true]
-                     :else [(apply list 'or params) changed])
+        (= 'or op) (let [removed (filter #(not (false? %)) params)]
+                     (cond
+                       (or (empty? params) (empty? removed)) [false true]
+                       (some true? removed) [true true]
+                       :else [(apply list 'or removed)
+                              (or changed
+                                  (not= (count params) (count removed)))]))
 
-        (= 'and op) (cond
-                      (some false? params) [false true]
-                      (every? true? params) [true true]
-                      :else [(apply list 'and params) changed])
+        (= 'and op) (let [removed (filter #(not (true? %)) params)]
+                      (cond
+                        (or (empty? params) (empty? removed)) [true true]
+                        (some false? removed) [false true]
+                        :else [(apply list 'and removed)
+                               (or changed
+                                   (not= (count params) (count removed)))]))
 
         ; list operations
         (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
