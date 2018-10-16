@@ -26,10 +26,6 @@
     (cond
       (seq errors) (validate-error
                      (string/join \newline (map :angler.errors/message errors)))
-      (= 'if op) (if (= 3 (count validated-params))
-                   ast
-                   (validate-error "Expected 3 arguments to if\n"
-                                   (prettify ast)))
       (= 'let op) (let [[bindings & body] validated-params]
                     (checks
                       [(vector? bindings)
