@@ -3,23 +3,25 @@
             [angler.test-utils :refer [abs-no-branching d=]]
             [anglican.core :refer [doquery]]
             [anglican.emit :refer [defm defquery with-primitive-procedures]]
-            [anglican.runtime :refer [dirichlet discrete flip gamma normal
-                                      sqrt]]
+            [anglican.runtime :refer [dirichlet discrete flip gamma mean normal
+                                      sqrt std]]
             [anglican.stat :refer [collect-by empirical-mean]]
+            [angler.errors :refer [debug]]
             [angler.primitives :refer [dirac]]
             [angler.inference :refer [p1 p2 p3 p4 p5 query]]))
 
 (defn angler-query
   [algorithm program nsamples & options]
   (->> (apply query algorithm program options)
-       (take nsamples)
-       (collect-by :result)))
+       (take nsamples)))
 
 (defn anglican-query
   [algorithm program nsamples & options]
-  (->> (apply doquery algorithm program [] options)
-       (take nsamples)
-       (collect-by :result)))
+  (let [burn-in (or ((apply hash-map options) :burn-in) 10000)]
+    (->> (apply doquery algorithm program [] options)
+         (map :result)
+         (drop burn-in)
+         (take nsamples))))
 
 (defquery anglican-p1 []
   (let [mu (sample (normal 1 (sqrt 5)))
@@ -89,28 +91,62 @@
       (observe (dirac (+ x y)) 7)
       [x y])))
 
+(defn d=5%
+  [^double reference ^double result]
+  (d= reference result (abs-no-branching (* 0.05 reference))))
+
 (deftest program-1
   (testing "program 1 with Gibbs sampling"
-    (let [reference (empirical-mean (anglican-query :rmh anglican-p1 1000))
-          result (empirical-mean (angler-query :gibbs p1 1000))]
-      (is (d= reference result (abs-no-branching (* 0.05 reference)))))))
+    (let [reference (anglican-query :smc anglican-p1 200000
+                                    :burn-in 10000
+                                    :number-of-particles 10000)
+          result (angler-query :gibbs p1 200000 :burn-in 10000)
+          r-mean (mean reference)
+          r-std (std reference)
+          m (mean result)
+          s (std result)]
+      (is (d=5% r-mean m))
+      (is (d=5% r-std s)))))
 
 (deftest program-2
   (testing "program 2 with Gibbs sampling"
-    (let [[ref-slope ref-bias] (empirical-mean
-                                 (anglican-query :rmh anglican-p2 1000))
-          [slope bias] (empirical-mean (angler-query :gibbs p2 1000))]
-      (is (d= ref-slope slope (abs-no-branching (* 0.05 ref-slope))))
-      (is (d= ref-bias bias (abs-no-branching (* 0.05 ref-bias)))))))
+    (let [reference (anglican-query :smc anglican-p2 200000
+                                    :burn-in 10000
+                                    :number-of-particles 10000)
+          result (angler-query :gibbs p2 200000 :burn-in 10000)
+          r-slope (map first reference)
+          r-bias (map second reference)
+          r-slope-mean (mean r-slope)
+          r-slope-std (std r-slope)
+          r-bias-mean (mean r-bias)
+          r-bias-std (std r-bias)
+          slope (map first result)
+          bias (map second result)
+          slope-mean (mean slope)
+          slope-std (std slope)
+          bias-mean (mean bias)
+          bias-std (std bias)]
+      (is (d=5% r-slope-mean slope-mean))
+      (is (d=5% r-slope-std slope-std))
+      (is (d=5% r-bias-mean bias-mean))
+      (is (d=5% r-bias-std bias-std)))))
+
+#_(deftest program-3
+  (testing "program 3 with Gibbs sampling"
+    (let [reference (anglican-query :smc anglican-p3 1000)
+          result (angler-query :gibbs p3 1000)]
+      (println reference)
+      (println result)
+      #_(is (d= reference result (abs-no-branching (* 0.05 reference)))))))
 
 #_(deftest program-4
     (testing "program 4 with Gibbs sampling"
-      (let [reference ((anglican-query :rmh anglican-p2 1000) true)
+      (let [reference ((anglican-query :smc anglican-p2 1000) true)
             result ((angler-query :gibbs p2 1000) true)]
         (is (d= reference result (abs-no-branching (* 0.05 reference)))))))
 
 #_(deftest program-5
     (testing "program 5 with Gibbs sampling"
-      (let [reference ((anglican-query :rmh anglican-p5 1000) true)
+      (let [reference ((anglican-query :smc anglican-p5 1000) true)
             result ((angler-query :gibbs p5 1000) true)]
         (is (d= reference result (abs-no-branching (* 0.05 reference)))))))

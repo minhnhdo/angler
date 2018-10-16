@@ -76,12 +76,9 @@
     (cond
       (nil? alg) (query-error "Unknown algorithm " algorithm)
       (:angler.errors/error output) output
-      :else (let [[^Graph {:keys [P] :as graph} result] output]
-              (map
-                (fn [^IPersistentMap sub]
-                  {:result (bind-free-variables sub result)
-                   :log-weight 0.0})
-                (apply alg graph options))))))
+      :else (let [[graph result] output]
+              (map #(peval (bind-free-variables % result))
+                   (apply alg graph options))))))
 
 (def p1
   '[(let [mu (sample (normal 1 (sqrt 5)))
