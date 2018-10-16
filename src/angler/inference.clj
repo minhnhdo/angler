@@ -10,7 +10,7 @@
   (:import [angler.types Graph]
            [clojure.lang IPersistentMap IPersistentVector Keyword]))
 
-(defn- markov-blanket
+(defn- dependents
   [^IPersistentMap m x]
   (conj (set (map first
                   (filter #(let [[_ e] %]
@@ -23,7 +23,7 @@
   (let [d (peval (bind-free-variables chi e))
         new-d (peval (bind-free-variables new-chi e))
         loga (- (observe* new-d (chi x)) (observe* d (new-chi x)))
-        Vx (markov-blanket P x)]
+        Vx (dependents P x)]
     (exp (apply +
                 loga
                 (map #(let [ve (P %)]
