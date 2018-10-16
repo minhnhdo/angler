@@ -115,11 +115,11 @@
                                sigma (sample (gamma 1.0 1.0))]
                            (normal mu sigma)))
           pi (sample (dirichlet [1.0 1.0 1.0]))
-          z-prior (discrete pi)]
-      (foreach 7 [y data]
-               (let [z (sample z-prior)]
-                 (observe (get likes z) y)
-                 (= (first z) (second z)))))])
+          z-prior (discrete pi)
+          z (foreach 7 [y data]
+                     (let [z (sample z-prior)]
+                       (observe (get likes z) y)))]
+      (= (first z) (second z)))])
 
 (def p4
   '[(let [sprinkler true

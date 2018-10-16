@@ -53,12 +53,12 @@
                                    sigma (sample (gamma 1.0 1.0))]
                                (normal mu sigma)))
         pi (sample (dirichlet [1.0 1.0 1.0]))
-        z-prior (discrete pi)]
-    (map (fn [y]
-           (let [z (sample z-prior)]
-             (observe (nth likes z) y)
-             (= (first z) (second z))))
-         data)))
+        z-prior (discrete pi)
+        t (map (fn [y]
+                 (let [z (sample z-prior)]
+                   (observe (get likes z) y)))
+               data)]
+    (= (first t) (second t))))
 
 (defquery anglican-p4 []
   (let [sprinkler true
