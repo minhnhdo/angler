@@ -34,6 +34,7 @@
                      Vx)))))
 
 (defn- gibbs-step
+  ^IPersistentMap
   [^IPersistentMap P ^IPersistentMap X ^IPersistentMap sub]
   (loop [to-do X
          chi sub]
@@ -46,18 +47,18 @@
         (recur new-to-do (if (< u a) new-chi chi)))
       chi)))
 
-(defn- gibbs-sampling
+(defn- gibbs
   ([^Graph {:keys [P Y] :as graph}]
    (let [P-dist (into {} (map #(let [[k [_ dist _]] %] [k dist]) P))
          X (apply dissoc P-dist (keys Y))
          chi (into (sample-from-prior graph) Y)]
-     (gibbs-sampling P-dist X chi)))
+     (gibbs P-dist X chi)))
   ([^IPersistentMap P ^IPersistentMap X ^IPersistentMap chi]
    (let [new-chi (gibbs-step P X chi)]
-     (lazy-seq (cons new-chi (gibbs-sampling P X new-chi))))))
+     (lazy-seq (cons new-chi (gibbs P X new-chi))))))
 
 (def ^:private algorithms
-  {:gibbs gibbs-sampling})
+  {:gibbs gibbs})
 
 (defn query
   [^Keyword algorithm ^IPersistentVector program]
