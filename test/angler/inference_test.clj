@@ -10,7 +10,7 @@
             [angler.primitives :refer [dirac]]
             [angler.inference :refer [p1 p2 p3 p4 p5 query]]))
 
-(def number-of-samples 100000)
+(def number-of-samples 200000)
 
 (def burn-in 10000)
 
