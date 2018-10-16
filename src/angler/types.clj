@@ -50,8 +50,10 @@
           changed (boolean (some identity (map #(nth % 1) peval-results)))]
       (cond
         (or (not (symbol? op)) (= 'list op)) [(apply list op params) changed]
+
         (contains? #{'hash-map 'hash-set 'vector} op)
         [(apply (built-ins op) params) true]
+
         (= 'if op)
         (let [[cond-exp then-exp else-exp] params]
           (cond
@@ -59,6 +61,14 @@
                                      changed]
             cond-exp (peval-once then-exp)
             :else (peval-once else-exp)))
+
+        (= 'or op) (if (some true? params)
+                     [true true]
+                     [(apply list 'or params) changed])
+
+        (= 'and op) (if (some false? params)
+                      [false true]
+                      [(apply list 'and params) changed])
 
         ; list operations
         (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
