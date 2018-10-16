@@ -49,21 +49,23 @@
         (recur new-to-do (if (< u a) new-chi chi)))
       chi)))
 
+(defn- gibbs-infinite-sequence
+  [^IPersistentMap P ^IPersistentMap X ^IPersistentMap chi]
+  (let [new-chi (gibbs-step P X chi)]
+    (lazy-seq (cons new-chi (gibbs-infinite-sequence P X new-chi)))))
+
 (defn- gibbs
-  ([^Graph {:keys [P Y] :as graph}]
+  ([^Graph {:keys [P Y] :as graph} & {:keys [burn-in] :or {burn-in 5000}}]
    (let [P-dist (into {} (map #(let [[k [_ dist _]] %] [k dist]) P))
          X (apply dissoc P-dist (keys Y))
          chi (into (sample-from-prior graph) Y)]
-     (gibbs P-dist X chi)))
-  ([^IPersistentMap P ^IPersistentMap X ^IPersistentMap chi]
-   (let [new-chi (gibbs-step P X chi)]
-     (lazy-seq (cons new-chi (gibbs P X new-chi))))))
+     (drop burn-in (gibbs-infinite-sequence P-dist X chi)))))
 
 (def ^:private algorithms
   {:gibbs gibbs})
 
 (defn query
-  [^Keyword algorithm ^IPersistentVector program]
+  [^Keyword algorithm ^IPersistentVector program & options]
   (let [alg (algorithms algorithm)
         output (checked->
                  program
@@ -79,7 +81,7 @@
                 (fn [^IPersistentMap sub]
                   {:result (bind-free-variables sub result)
                    :log-weight 0.0})
-                (alg graph))))))
+                (apply alg graph options))))))
 
 (def p1
   '[(let [mu (sample (normal 1 (sqrt 5)))

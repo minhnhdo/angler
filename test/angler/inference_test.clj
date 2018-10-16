@@ -10,15 +10,14 @@
             [angler.inference :refer [p1 p2 p3 p4 p5 query]]))
 
 (defn angler-query
-  [algorithm program nsamples]
-  (->> (query algorithm program)
+  [algorithm program nsamples & options]
+  (->> (apply query algorithm program options)
        (take nsamples)
        (collect-by :result)))
 
 (defn anglican-query
-  [algorithm program nsamples]
-  (->> (doquery algorithm program []
-                :number-of-particles 10000)
+  [algorithm program nsamples & options]
+  (->> (apply doquery algorithm program [] options)
        (take nsamples)
        (collect-by :result)))
 
