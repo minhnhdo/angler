@@ -26,13 +26,11 @@
         Vx (dependents P x)]
     (exp (apply +
                 loga
-                (map #(let [ve (P %)
-                            new-de (peval (bind-free-variables new-chi ve))
-                            de (peval (bind-free-variables chi ve))]
-                        (if (and de new-de)
-                          (- (observe* new-de (new-chi %))
-                             (observe* de (chi %)))
-                          Double/NEGATIVE_INFINITY))
+                (map #(let [ve (P %)]
+                        (- (observe* (peval (bind-free-variables new-chi ve))
+                                     (new-chi %))
+                           (observe* (peval (bind-free-variables chi ve))
+                                     (chi %))))
                      Vx)))))
 
 (defn- gibbs-step
