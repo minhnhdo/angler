@@ -62,13 +62,15 @@
             cond-exp (peval-once then-exp)
             :else (peval-once else-exp)))
 
-        (= 'or op) (if (some true? params)
-                     [true true]
-                     [(apply list 'or params) changed])
+        (= 'or op) (cond
+                     (some true? params) [true true]
+                     (every? false? params) [false true]
+                     :else [(apply list 'or params) changed])
 
-        (= 'and op) (if (some false? params)
-                      [false true]
-                      [(apply list 'and params) changed])
+        (= 'and op) (cond
+                      (some false? params) [false true]
+                      (every? true? params) [true true]
+                      :else [(apply list 'and params) changed])
 
         ; list operations
         (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
