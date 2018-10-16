@@ -13,8 +13,8 @@
                   (if (= 'if op)
                     (let [[e1 e2 e3] params]
                       (list 'if e1 (score e2 v) (score e3 v)))
-                    (list 'observe* exp v)))
-    (satisfies? anglican.runtime/distribution exp) (list 'observe* exp v)
+                    exp))
+    (satisfies? anglican.runtime/distribution exp) exp
     :else (throw (CompileError. (str "Unexpected " exp)))))
 
 (defn- compile-identifier

@@ -294,7 +294,7 @@
           to-do ordering]
      (if (seq to-do)
        (let [[v & new-to-do] to-do
-             sampled-value (let [[_ dist _] (P v)]
+             sampled-value (let [dist (P v)]
                              (anglican.runtime/sample*
                                (if (satisfies? anglican.runtime/distribution dist)
                                  dist
@@ -311,7 +311,7 @@
      (if (seq to-do)
        (let [[v & new-to-do] to-do]
          (if (not (contains? Y v))
-           (let [sampled-value (let [[_ dist _] (P v)]
+           (let [sampled-value (let [dist (P v)]
                                  (anglican.runtime/sample*
                                    (if (satisfies? anglican.runtime/distribution dist)
                                      dist

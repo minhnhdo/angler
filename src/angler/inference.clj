@@ -56,10 +56,9 @@
 
 (defn- gibbs
   ([^Graph {:keys [P Y] :as graph} & {:keys [burn-in] :or {burn-in 5000}}]
-   (let [P-dist (into {} (map #(let [[k [_ dist _]] %] [k dist]) P))
-         X (apply dissoc P-dist (keys Y))
+   (let [X (apply dissoc P (keys Y))
          chi (into (sample-from-prior graph) Y)]
-     (drop burn-in (gibbs-infinite-sequence P-dist X chi)))))
+     (drop burn-in (gibbs-infinite-sequence P X chi)))))
 
 (def ^:private algorithms
   {:gibbs gibbs})
