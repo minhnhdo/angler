@@ -1,5 +1,6 @@
 (ns angler.passes.compile
   (:require [clojure.set :refer [intersection union]]
+            [anglican.runtime :refer [distribution]]
             [angler.errors :refer [checks compile-error]]
             [angler.types :refer [built-ins distributions empty-graph free-vars
                                   join-graph new-graph peval]])
@@ -14,7 +15,7 @@
                     (let [[e1 e2 e3] params]
                       (list 'if e1 (score e2 v) (score e3 v)))
                     exp))
-    (satisfies? anglican.runtime/distribution exp) exp
+    (satisfies? distribution exp) exp
     :else (throw (CompileError. (str "Unexpected " exp)))))
 
 (defn- compile-identifier

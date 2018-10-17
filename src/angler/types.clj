@@ -2,7 +2,8 @@
   (:require [clojure.pprint :refer [pprint]]
             [clojure.set :refer [union]]
             [clojure.string :refer [ends-with? starts-with?]]
-            [anglican core runtime]
+            anglican.core
+            [anglican.runtime :refer [distribution sample*]]
             [angler.errors :refer [graph-error]]
             angler.primitives)
   (:import [clojure.lang IPersistentList IPersistentMap IPersistentSet
@@ -285,7 +286,7 @@
 (defn bind-free-variables
   [^IPersistentMap sub exp]
   (cond
-    (satisfies? anglican.runtime/distribution exp) exp
+    (satisfies? distribution exp) exp
     (seqable? exp) ((cond
                       (vector? exp) vec
                       (map? exp) #(apply into {} %)
@@ -303,10 +304,9 @@
      (if (seq to-do)
        (let [[v & new-to-do] to-do
              sampled-value (let [dist (P v)]
-                             (anglican.runtime/sample*
-                               (if (satisfies? anglican.runtime/distribution dist)
-                                 dist
-                                 (peval (bind-free-variables m dist)))))]
+                             (sample* (if (satisfies? distribution dist)
+                                        dist
+                                        (peval (bind-free-variables m dist)))))]
          (recur (assoc m v sampled-value)
                 new-to-do))
        m)))
@@ -320,10 +320,10 @@
        (let [[v & new-to-do] to-do]
          (if (not (contains? Y v))
            (let [sampled-value (let [dist (P v)]
-                                 (anglican.runtime/sample*
-                                   (if (satisfies? anglican.runtime/distribution dist)
-                                     dist
-                                     (peval (bind-free-variables (into m Y) dist)))))]
+                                 (sample* (if (satisfies? distribution dist)
+                                            dist
+                                            (peval (bind-free-variables
+                                                     (into m Y) dist)))))]
              (recur (assoc m v sampled-value)
                     new-to-do))
            (recur m new-to-do)))
