@@ -1,35 +1,34 @@
 (ns angler.autodiff
-  (:require [angler.types :refer [built-ins]])
+  (:require [anglican.runtime :refer [cos exp log sin sqrt]])
   (:import [clojure.lang IPersistentList IPersistentMap ISeq]))
 
 (def ^:private supported-operations
-  {'+ {:func (get built-ins '+)
+  {'+ {:func +
        :deriv-fns [(fn [a b] 1) (fn [a b] 1)]}
-   '- {:func (get built-ins '-)
+   '- {:func -
        :deriv-fns [(fn [a b] 1) (fn [a b] -1)]}
-   '* {:func (get built-ins '*)
+   '* {:func *
        :deriv-fns [(fn [a b] b) (fn [a b] a)]}
-   '/ {:func (get built-ins '/)
+   '/ {:func /
        :deriv-fns [(fn [a b] (/ 1 b)) (fn [a b] (* a (/ -1 (* b b))))]}
-   'exp {:func (get built-ins 'exp)
-         :deriv-fns [(fn [a] ((get built-ins 'exp) a))]}
-   'log {:func (get built-ins 'log)
+   'exp {:func exp
+         :deriv-fns [exp]}
+   'log {:func log
          :deriv-fns [(fn [a] (/ 1 a))]}
-   'sqrt {:func (get built-ins 'sqrt)
-          :deriv-fns [(fn [a] (/ 1 (* 2 ((get built-ins 'sqrt) a))))]}
+   'sqrt {:func sqrt
+          :deriv-fns [(fn [a] (/ 1 (* 2 (sqrt a))))]}
    'relu {:func (fn [a] (max 0 a))
           :deriv-fns [(fn [a] (if (> a 0) 1 0))]}
-   'sin {:func (get built-ins 'sin)
-         :deriv-fns [(fn [a] ((get built-ins 'cos) a))]}
-   'cos {:func (get built-ins 'cos)
-         :deriv-fns [(fn [a] (- ((get built-ins 'sin) a)))]}
+   'sin {:func sin
+         :deriv-fns [cos]}
+   'cos {:func cos
+         :deriv-fns [(fn [a] (- (sin a)))]}
    'normpdf {:func (fn [x mu sigma]
                      (let [x-mu (- x mu)
                            two-variance (* 2 sigma sigma)]
-                       ((get built-ins 'log)
-                        (* (/ 1 ((get built-ins 'sqrt) (* Math/PI two-variance)))
-                           ((get built-ins 'exp) (- (/ (* x-mu x-mu)
-                                                       two-variance)))))))
+                       (log (* (/ 1 (sqrt (* Math/PI two-variance)))
+                               (exp (- (/ (* x-mu x-mu)
+                                          two-variance)))))))
              :deriv-fns [(fn [x mu sigma]
                            (/ (- mu x)
                               (* sigma sigma)))
@@ -40,12 +39,12 @@
                            (/ (- (* (- x mu) (- x mu))
                                  (* sigma sigma))
                               (* sigma sigma sigma)))]}
-   '= {:func (get built-ins '=)}
-   '> {:func (get built-ins '>)}
-   '< {:func (get built-ins '<)}
-   '>= {:func (get built-ins '>=)}
-   '<= {:func (get built-ins '<=)}
-   'not {:func (get built-ins 'not)}})
+   '= {:func =}
+   '> {:func >}
+   '< {:func <}
+   '>= {:func >=}
+   '<= {:func <=}
+   'not {:func not}})
 
 (defn- autodiff-forward
   ^IPersistentMap
