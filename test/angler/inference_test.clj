@@ -61,7 +61,8 @@
         z-prior (discrete pi)
         z (map (fn [y]
                  (let [z (sample z-prior)]
-                   (observe (nth likes z) y)))
+                   (observe (nth likes z) y)
+                   z))
                data)]
     (= (first z) (second z))))
 
@@ -139,43 +140,65 @@
       (is (d=5% r-bias-mean bias-mean))
       (is (d=5% r-bias-std bias-std)))))
 
-#_(deftest program-3
-    (testing "program 3 with Gibbs sampling"
-      (let [reference (anglican-query :smc anglican-p3 1000)
-            result (angler-query :gibbs p3 1000)]
-        (is (d= reference result (abs-no-branching (* 0.05 reference)))))))
+(deftest program-3
+  (testing "program 3 with Gibbs sampling"
+    (let [reference (map #(if % 1.0 0.0)
+                      (anglican-query :smc anglican-p3 number-of-samples
+                                              :burn-in burn-in
+                                              :number-of-particles 10000))
+          result (map #(if % 1.0 0.0)
+                      (angler-query :gibbs p3 number-of-samples
+                                          :burn-in burn-in))
+          r-mean (mean reference)
+          r-std (std reference)
+          m (mean result)
+          s (std result)]
+      (println "program 3")
+      (println "reference" r-mean r-std)
+      (println "result" m s)
+      (is (d=5% r-mean m))
+      (is (d=5% r-std s)))))
 
 (deftest program-4
   (testing "program 4 with Gibbs sampling"
-    (let [r-freq (frequencies (anglican-query :smc anglican-p4 number-of-samples
-                                              :burn-in burn-in
-                                              :number-of-particles 10000))
-          freq (frequencies (angler-query :gibbs p4 number-of-samples
-                                          :burn-in burn-in))
-          r-prob-raining (/ (r-freq true) (apply + (vals r-freq)))
-          prob-raining (/ (freq true) (apply + (vals freq)))]
+    (let [reference (map #(if % 1.0 0.0)
+                         (anglican-query :smc anglican-p4 number-of-samples
+                                         :burn-in burn-in
+                                         :number-of-particles 10000))
+          result (map #(if % 1.0 0.0)
+                      (angler-query :gibbs p4 number-of-samples
+                                    :burn-in burn-in))
+          r-mean (mean reference)
+          r-std (std reference)
+          m (mean result)
+          s (std result)]
       (println "program 4")
-      (println "reference" r-freq)
-      (println "result" freq)
-      (is (d=5% r-prob-raining prob-raining)))))
+      (println "reference" r-mean r-std)
+      (println "result" m s)
+      (is (d=5% r-mean m))
+      (is (d=5% r-std s)))))
 
 (deftest program-5
   (testing "program 5 with Gibbs sampling"
-    (let [;reference (anglican-query :smc anglican-p5 number-of-samples
-          ;                          :burn-in burn-in
-          ;                          :number-of-particles 10000)
+    (let [reference (anglican-query :smc anglican-p5 number-of-samples
+                                    :burn-in burn-in
+                                    :number-of-particles 10000)
           result (angler-query :gibbs p5 number-of-samples
                                :burn-in burn-in)
-          ;r-x-mean (mean (map first reference))
-          ;r-x-variance (variance (map first reference))
-          ;r-y-mean (mean (map second reference))
-          ;r-y-variance (variance (map second reference))
+          r-x-mean (mean (map first reference))
+          r-x-variance (variance (map first reference))
+          r-y-mean (mean (map second reference))
+          r-y-variance (variance (map second reference))
           x-mean (mean (map first result))
           x-variance (variance (map first result))
           y-mean (mean (map second result))
           y-variance (variance (map second result))]
       (println "program 5")
-      (println "mean(x) =" x-mean)
-      (println "variance(x) =" x-variance)
-      (println "mean(y) =" y-mean)
-      (println "variance(y) =" y-variance))))
+      (println "reference x ~ (" r-x-mean "," r-x-variance ") y ~("
+               r-y-mean "," r-y-variance ")")
+      (println "result x ~ (" x-mean "," x-variance ") y ~("
+               y-mean "," y-variance ")")
+      (is (d=5% r-x-mean x-mean))
+      (is (d=5% r-x-variance x-variance))
+      (is (d=5% r-y-mean y-mean))
+      (is (d=5% r-y-variance y-variance)))))

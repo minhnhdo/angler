@@ -110,7 +110,8 @@
           z-prior (discrete pi)
           z (foreach 7 [y data]
                      (let [z (sample z-prior)]
-                       (observe (nth likes z) y)))]
+                       (observe (nth likes z) y)
+                       z))]
       (= (first z) (second z)))])
 
 (def p4
