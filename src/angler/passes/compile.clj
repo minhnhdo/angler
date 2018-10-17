@@ -2,8 +2,8 @@
   (:require [clojure.set :refer [intersection union]]
             [anglican.runtime :refer [distribution]]
             [angler.errors :refer [checks compile-error]]
-            [angler.types :refer [built-ins distributions empty-graph free-vars
-                                  join-graph new-graph peval]])
+            [angler.types :refer [built-ins empty-graph free-vars join-graph
+                                  new-graph peval]])
   (:import [clojure.lang IPersistentMap IPersistentVector]
            [angler.errors CompileError]))
 
@@ -43,11 +43,19 @@
   (let [[_ cond-exp then-exp else-exp] if-exp
         [graph-cond compiled-cond] (compile-expression sub procs pred cond-exp)
         [graph-then compiled-then]
-        (compile-expression sub procs (peval (list 'and pred cond-exp)) then-exp)
+        (compile-expression sub
+                            procs
+                            (peval (list 'and pred cond-exp) :eval-dist false)
+                            then-exp)
         [graph-else compiled-else]
-        (compile-expression sub procs (peval (list 'and pred (not cond-exp))) else-exp)]
+        (compile-expression sub
+                            procs
+                            (peval (list 'and pred (not cond-exp))
+                                   :eval-dist false)
+                            else-exp)]
     [(join-graph graph-cond graph-then graph-else)
-     (peval (list 'if compiled-cond compiled-then compiled-else))]))
+     (peval (list 'if compiled-cond compiled-then compiled-else)
+            :eval-dist false)]))
 
 (defn- compile-sample
   ^IPersistentVector
@@ -72,7 +80,7 @@
         {:keys [V A P Y]} (join-graph graph-e1 graph-e2)
         v (gensym)
         F1 (score compiled-e1 v)
-        F (peval (list 'if pred F1 1))
+        F (peval (list 'if pred F1 1) :eval-dist false)
         Z (disj (free-vars procs F1) v)
         B (map #(vector % v) Z)
         unexpected-free-vars (intersection (free-vars procs compiled-e2) V)]
@@ -104,7 +112,7 @@
         graphs (map #(nth % 0) compiled-results)
         compiled-exps (map #(nth % 1) compiled-results)]
     [(apply join-graph graphs)
-     (peval (apply list op compiled-exps))]))
+     (peval (apply list op compiled-exps) :eval-dist false)]))
 
 (defn- compile-list
   ^IPersistentVector

@@ -14,7 +14,7 @@
        (map #(name (nth % 0)))
        (filter #(and (starts-with? % "->") (ends-with? % "-distribution")))
        (map #(let [l (count %)] (symbol (subs % 2 (- l 13)))))
-       (into #{})))
+       (into #{'dirac})))
 
 (def built-ins
   (dissoc (merge (ns-publics 'clojure.core)
@@ -43,127 +43,131 @@
 
 (defn peval-once
   ^IPersistentVector
-  [exp]
-  (cond
-    (and (list? exp) (seq exp))
-    (let [peval-results (map peval-once exp)
-          [op & params] (map #(nth % 0) peval-results)
-          changed (boolean (some identity (map #(nth % 1) peval-results)))]
-      (cond
-        (or (not (symbol? op)) (= 'list op)) [(apply list op params) changed]
+  [exp & options]
+  (let [{:keys [eval-dist] :or {eval-dist true}} options]
+    (cond
+      (and (list? exp) (seq exp))
+      (let [peval-results (map #(apply peval-once % options) exp)
+            [op & params] (map #(nth % 0) peval-results)
+            changed (boolean (some identity (map #(nth % 1) peval-results)))]
+        (cond
+          (or (not (symbol? op)) (= 'list op)) [(apply list op params) changed]
 
-        (contains? #{'hash-map 'hash-set 'vector} op)
-        [(apply (built-ins op) params) true]
+          (contains? #{'hash-map 'hash-set 'vector} op)
+          [(apply (built-ins op) params) true]
 
-        (= 'if op)
-        (let [[cond-exp then-exp else-exp] params]
-          (cond
-            (not (value? cond-exp)) [(list 'if cond-exp then-exp else-exp)
-                                     changed]
-            cond-exp (peval-once then-exp)
-            :else (peval-once else-exp)))
+          (= 'if op)
+          (let [[cond-exp then-exp else-exp] params]
+            (cond
+              (not (value? cond-exp)) [(list 'if cond-exp then-exp else-exp)
+                                       changed]
+              cond-exp (apply peval-once then-exp options)
+              :else (apply peval-once else-exp options)))
 
-        (= 'or op) (let [removed (filter #(not (false? %)) params)]
-                     (cond
-                       (or (empty? params) (empty? removed)) [false true]
-                       (some true? removed) [true true]
-                       :else [(apply list 'or removed)
-                              (or changed
-                                  (not= (count params) (count removed)))]))
+          (= 'or op) (let [removed (filter #(not (false? %)) params)]
+                       (cond
+                         (or (empty? params) (empty? removed)) [false true]
+                         (some true? removed) [true true]
+                         :else [(apply list 'or removed)
+                                (or changed
+                                    (not= (count params) (count removed)))]))
 
-        (= 'and op) (let [removed (filter #(not (true? %)) params)]
-                      (cond
-                        (or (empty? params) (empty? removed)) [true true]
-                        (some false? removed) [false true]
-                        :else [(apply list 'and removed)
-                               (or changed
-                                   (not= (count params) (count removed)))]))
+          (= 'and op) (let [removed (filter #(not (true? %)) params)]
+                        (cond
+                          (or (empty? params) (empty? removed)) [true true]
+                          (some false? removed) [false true]
+                          :else [(apply list 'and removed)
+                                 (or changed
+                                     (not= (count params) (count removed)))]))
 
-        ; list operations
-        (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
-        [(- (count (first params)) 1) true]
+          (and (contains? distributions op) (not eval-dist))
+          [(apply list op params) changed]
 
-        (and (= 'peek op) (list-literal? (first params)) (= 1 (count params)))
-        [(let [[[_ f]] params] f) true]
+          ; list operations
+          (and (= 'count op) (list-literal? (first params)) (= 1 (count params)))
+          [(- (count (first params)) 1) true]
 
-        (and (= 'pop op) (list-literal? (first params)) (= 1 (count params)))
-        [(apply list 'list (rest (rest (first params)))) true]
+          (and (= 'peek op) (list-literal? (first params)) (= 1 (count params)))
+          [(let [[[_ f]] params] f) true]
 
-        (and (= 'list? op) (= 1 (count params)))
-        [(let [[f] params] (and (list? f) (= 'list (first f)))) true]
+          (and (= 'pop op) (list-literal? (first params)) (= 1 (count params)))
+          [(apply list 'list (rest (rest (first params)))) true]
 
-        (and (= 'conj op) (list-literal? (first params)))
-        [(let [[[_ & elems] & added] params]
-           (apply list 'list (into elems added))) true]
+          (and (= 'list? op) (= 1 (count params)))
+          [(let [[f] params] (and (list? f) (= 'list (first f)))) true]
 
-        ; TODO list*
+          (and (= 'conj op) (list-literal? (first params)))
+          [(let [[[_ & elems] & added] params]
+             (apply list 'list (into elems added))) true]
 
-        ;; sequence operations on lists
+          ; TODO list*
 
-        (and (= 'first op) (list-literal? (first params)) (= 1 (count params)))
-        [(let [[[_ f]] params] f) true]
+          ;; sequence operations on lists
 
-        (and (= 'second op) (list-literal? (first params)) (= 1 (count params)))
-        [(let [[[_ _ s]] params] s) true]
+          (and (= 'first op) (list-literal? (first params)) (= 1 (count params)))
+          [(let [[[_ f]] params] f) true]
 
-        (and (= 'rest op) (list-literal? (first params)) (= 1 (count params)))
-        [(let [[[_ _ & elems]] params] (apply list 'list elems)) true]
+          (and (= 'second op) (list-literal? (first params)) (= 1 (count params)))
+          [(let [[[_ _ s]] params] s) true]
 
-        ; last is correctly implemented by default
+          (and (= 'rest op) (list-literal? (first params)) (= 1 (count params)))
+          [(let [[[_ _ & elems]] params] (apply list 'list elems)) true]
 
-        (and (= 'cons op) (list-literal? (second params)) (= 2 (count params)))
-        [(let [[elem [_ & elems]] params] (apply list 'list elem elems)) true]
+          ; last is correctly implemented by default
 
-        (and (= 'nth op)
-             (list-literal? (first params))
-             (= 2 (count params))
-             (int? (second params))
-             (<= 0 (second params) (- (count (first params)) 2)))
-        [(nth (first params) (+ 1 (second params))) true]
+          (and (= 'cons op) (list-literal? (second params)) (= 2 (count params)))
+          [(let [[elem [_ & elems]] params] (apply list 'list elem elems)) true]
 
-        (and (= 'get op)
-             (list-literal? (first params))
-             (= 2 (count params))
-             (int? (second params)))
-        [(get (first params) (+ 1 (second params))) true]
+          (and (= 'nth op)
+               (list-literal? (first params))
+               (= 2 (count params))
+               (int? (second params))
+               (<= 0 (second params) (- (count (first params)) 2)))
+          [(nth (first params) (+ 1 (second params))) true]
 
-        ; try to perform primitive calls
-        :else (let [resolved-op (built-ins op)]
-                (cond
-                  (and (contains? #{'append 'conj 'cons 'first
-                                    'second 'rest 'last}
-                                  op)
-                       (seqable? (first params))) [(apply resolved-op params)
-                                                   true]
-                  (and (contains? #{'get 'nth} op)
-                       (let [[f & others] params]
-                         (and (seqable? f)
-                              (not (and (or (list? f) (seq? f))
-                                        (contains? built-ins (first f))))
-                              (every? value?
-                                      others)))) [(apply resolved-op params)
-                                                  true]
-                  (or (nil? resolved-op)
-                      (not (every? value? params))) [(apply list op params)
-                                                     changed]
-                  :else [(apply resolved-op params) true]))))
-    (seqable? exp) (let [peval-results (map peval-once exp)
-                         contents (map #(nth % 0) peval-results)
-                         changed (boolean (some identity
-                                                (map #(nth % 1) peval-results)))]
-                     (cond
-                       (not changed) [exp false]
-                       (map? exp) [(apply into {} contents) true]
-                       (set? exp) [(set contents) true]
-                       (vector? exp) [(vec contents) true]
-                       :else [(apply list contents) true]))
-    :else [exp false]))
+          (and (= 'get op)
+               (list-literal? (first params))
+               (= 2 (count params))
+               (int? (second params)))
+          [(get (first params) (+ 1 (second params))) true]
+
+          ; try to perform primitive calls
+          :else (let [resolved-op (built-ins op)]
+                  (cond
+                    (and (contains? #{'append 'conj 'cons 'first
+                                      'second 'rest 'last}
+                                    op)
+                         (seqable? (first params))) [(apply resolved-op params)
+                                                     true]
+                    (and (contains? #{'get 'nth} op)
+                         (let [[f & others] params]
+                           (and (seqable? f)
+                                (not (and (or (list? f) (seq? f))
+                                          (contains? built-ins (first f))))
+                                (every? value?
+                                        others)))) [(apply resolved-op params)
+                                                    true]
+                    (or (nil? resolved-op)
+                        (not (every? value? params))) [(apply list op params)
+                                                       changed]
+                    :else [(apply resolved-op params) true]))))
+      (seqable? exp) (let [peval-results (map #(apply peval-once % options) exp)
+                           contents (map #(nth % 0) peval-results)
+                           changed (boolean (some identity
+                                                  (map #(nth % 1) peval-results)))]
+                       (cond
+                         (not changed) [exp false]
+                         (map? exp) [(apply into {} contents) true]
+                         (set? exp) [(set contents) true]
+                         (vector? exp) [(vec contents) true]
+                         :else [(apply list contents) true]))
+      :else [exp false])))
 
 (defn peval
-  [exp]
+  [exp & options]
   (loop [[result changed] [exp true]]
     (if changed
-      (recur (peval-once result))
+      (recur (apply peval-once result options))
       result)))
 
 (declare free-vars)
