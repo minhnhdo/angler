@@ -1,6 +1,10 @@
 (ns angler.primitives
   (:require [clojure.core.matrix :as m]
-            [anglican.runtime :refer [defdist tanh]]))
+            [anglican.core :refer :all]
+            [anglican.runtime :refer :all])
+  (:refer-clojure :exclude [loop map reduce filter keep keep-indexed remove
+                            repeatedly every? not-any? some every-pred some-fn
+                            comp juxt partial]))
 
 (defn append
   [& args]
@@ -28,11 +32,12 @@
 
 (defn mat-repmat
   [M r c]
-  (let [R (reduce (partial m/join-along 0) (repeat r M))]
-    (reduce (partial m/join-along 1) (repeat c R))))
+  (let [R (clojure.core/reduce (clojure.core/partial m/join-along 0)
+                               (repeat r M))]
+    (clojure.core/reduce (clojure.core/partial m/join-along 1) (repeat c R))))
 
 (defdist dirac [x] []
   (sample* [this] x)
   (observe* [this value] (if (= value x)
                            0
-                           (- (/ 1.0 0.0)))))
+                           Double/NEGATIVE_INFINITY)))

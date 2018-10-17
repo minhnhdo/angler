@@ -8,29 +8,26 @@
             [angler.types :refer [ancestral-ordering bind-free-variables
                                   free-vars peval sample-from-prior]])
   (:import [angler.types Graph]
-           [clojure.lang IPersistentMap IPersistentVector Keyword]))
+           [clojure.lang IFn IPersistentMap IPersistentVector Keyword Symbol]))
 
 (defn- dependents
-  [^IPersistentMap m x]
-  (conj (set (map first
-                  (filter #(let [[_ e] %]
-                             (contains? (free-vars {} e) x))
-                          m)))
+  [^IPersistentMap m ^Symbol x]
+  (conj (set (map first (filter (fn [[_ [args _]]] (some #(= x %) args)) m)))
         x))
 
 (defn- accept
-  [^IPersistentMap P x e ^IPersistentMap new-chi ^IPersistentMap chi]
-  (let [d (peval (bind-free-variables chi e))
-        new-d (peval (bind-free-variables new-chi e))
+  [^IPersistentMap P ^Symbol x ^IPersistentVector args ^IFn func
+   ^IPersistentMap new-chi ^IPersistentMap chi]
+  (let [d (apply func (map chi args))
+        new-d (apply func (map new-chi args))
         loga (- (observe* new-d (chi x)) (observe* d (new-chi x)))
         Vx (dependents P x)]
     (exp (apply +
                 loga
-                (map #(let [ve (P %)]
-                        (- (observe* (peval (bind-free-variables new-chi ve))
+                (map #(let [[vargs vfunc] (P %)]
+                        (- (observe* (apply vfunc (map new-chi vargs))
                                      (new-chi %))
-                           (observe* (peval (bind-free-variables chi ve))
-                                     (chi %))))
+                           (observe* (apply vfunc (map chi vargs)) (chi %))))
                      Vx)))))
 
 (defn- gibbs-step
@@ -39,10 +36,10 @@
   (loop [to-do X
          chi sub]
     (if (seq to-do)
-      (let [[[x e] & new-to-do] to-do
-            dist (peval (bind-free-variables chi e))
+      (let [[[x [args func]] & new-to-do] to-do
+            dist (apply func (map chi args))
             new-chi (assoc chi x (sample* dist))
-            a (accept P x e new-chi chi)
+            a (accept P x args func new-chi chi)
             u (sample* (uniform-continuous 0 1))]
         (recur new-to-do (if (< u a) new-chi chi)))
       chi)))
@@ -54,9 +51,18 @@
 
 (defn- gibbs
   ([^Graph {:keys [P Y] :as graph} & {:keys [burn-in] :or {burn-in 5000}}]
-   (let [X (apply dissoc P (keys Y))
-         chi (into (sample-from-prior graph) Y)]
-     (drop burn-in (gibbs-infinite-sequence P X chi)))))
+   (let [ordering (ancestral-ordering graph)
+         P-enhanced (into {}
+                          (map #(let [[x e] %
+                                      vars (disj (free-vars {} e) x)
+                                      args (vec (filter vars ordering))]
+                                  [x [args
+                                      (binding [*ns* (in-ns 'angler.primitives)]
+                                        (eval (list 'fn args e)))]])
+                               P))
+         X (apply dissoc P-enhanced (keys Y))
+         chi (into (sample-from-prior graph ordering) Y)]
+     (drop burn-in (gibbs-infinite-sequence P-enhanced X chi)))))
 
 (def ^:private algorithms
   {:gibbs gibbs})
