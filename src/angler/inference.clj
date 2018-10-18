@@ -53,7 +53,8 @@
                                  args (vec (filter vars ordering))]
                              [x [args
                                  (binding [*ns* (in-ns 'angler.primitives)]
-                                   (eval (list 'fn args e)))]])
+                                   (eval (list 'fn args
+                                               (bind-free-variables Y e))))]])
                           P))
         P-dependents (into {}
                            (map (fn [[x [a f]]]
