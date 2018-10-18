@@ -45,30 +45,30 @@
     (lazy-seq (cons new-chi (gibbs-infinite-sequence P X new-chi)))))
 
 (defn- gibbs
-  ([^Graph {:keys [P Y] :as graph} & options]
-   (let [ordering (ancestral-ordering graph)
-         P-func (into {}
-                      (map #(let [[x e] %
-                                  vars (disj (free-vars {} e) x)
-                                  args (vec (filter vars ordering))]
-                              [x [args
-                                  (binding [*ns* (in-ns 'angler.primitives)]
-                                    (eval (list 'fn args e)))]])
-                           P))
-         P-dependents (into {}
-                            (map (fn [[x [a f]]]
-                                   [x [a
-                                       (conj (mapv first
-                                                   (filter (fn [[_ [args _]]]
-                                                             (some #(= x %)
-                                                                   args))
-                                                           P-func))
-                                             x)
-                                       f]])
-                                 P-func))
-         X (apply dissoc P-dependents (keys Y))
-         chi (into (sample-from-prior graph ordering) Y)]
-     (gibbs-infinite-sequence P-dependents X chi))))
+  [^Graph {:keys [P Y] :as graph} & options]
+  (let [ordering (ancestral-ordering graph)
+        P-func (into {}
+                     (map #(let [[x e] %
+                                 vars (disj (free-vars {} e) x)
+                                 args (vec (filter vars ordering))]
+                             [x [args
+                                 (binding [*ns* (in-ns 'angler.primitives)]
+                                   (eval (list 'fn args e)))]])
+                          P))
+        P-dependents (into {}
+                           (map (fn [[x [a f]]]
+                                  [x [a
+                                      (conj (mapv first
+                                                  (filter (fn [[_ [args _]]]
+                                                            (some #(= x %)
+                                                                  args))
+                                                          P-func))
+                                            x)
+                                      f]])
+                                P-func))
+        X (apply dissoc P-dependents (keys Y))
+        chi (into (sample-from-prior graph ordering) Y)]
+    (gibbs-infinite-sequence P-dependents X chi)))
 
 (def ^:private algorithms
   {:gibbs gibbs})
