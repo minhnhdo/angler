@@ -99,10 +99,9 @@
 (deftest gibbs-program-1
   (testing "program 1 with Gibbs sampling"
     (println "running program 1 with Gibbs sampling")
-    (let [reference (vec (anglican-query :lmh anglican-p1 number-of-samples
-                                         :burn-in burn-in))
-          result (vec (angler-query :gibbs p1 number-of-samples
-                                    :burn-in burn-in))
+    (let [reference (anglican-query :lmh anglican-p1 number-of-samples
+                                    :burn-in burn-in)
+          result (angler-query :gibbs p1 number-of-samples :burn-in burn-in)
           r-mean (mean reference)
           r-std (std reference)
           m (mean result)
@@ -116,10 +115,9 @@
 (deftest gibbs-program-2
   (testing "program 2 with Gibbs sampling"
     (println "running program 2 with Gibbs sampling")
-    (let [reference (vec (anglican-query :lmh anglican-p2 number-of-samples
-                                         :burn-in burn-in))
-          result (vec (angler-query :gibbs p2 number-of-samples
-                                    :burn-in burn-in))
+    (let [reference (anglican-query :lmh anglican-p2 number-of-samples
+                                    :burn-in burn-in)
+          result (angler-query :gibbs p2 number-of-samples :burn-in burn-in)
           r-slope-mean (mean (map first reference))
           r-slope-std (std (map first reference))
           r-bias-mean (mean (map second reference))
@@ -141,12 +139,12 @@
 (deftest gibbs-program-3
   (testing "program 3 with Gibbs sampling"
     (println "running program 3 with Gibbs sampling")
-    (let [reference (vec (map #(if % 1.0 0.0)
-                              (anglican-query :lmh anglican-p3 number-of-samples
-                                              :burn-in burn-in)))
-          result (vec (map #(if % 1.0 0.0)
-                           (angler-query :gibbs p3 number-of-samples
-                                         :burn-in burn-in)))
+    (let [reference (map #(if % 1.0 0.0)
+                         (anglican-query :lmh anglican-p3 number-of-samples
+                                         :burn-in burn-in))
+          result (map #(if % 1.0 0.0)
+                      (angler-query :gibbs p3 number-of-samples
+                                    :burn-in burn-in))
           r-mean (mean reference)
           r-std (std reference)
           m (mean result)
@@ -160,12 +158,12 @@
 (deftest gibbs-program-4
   (testing "program 4 with Gibbs sampling"
     (println "running program 4 with Gibbs sampling")
-    (let [reference (vec (map #(if % 1.0 0.0)
-                              (anglican-query :lmh anglican-p4 number-of-samples
-                                              :burn-in burn-in)))
-          result (vec (map #(if % 1.0 0.0)
-                           (angler-query :gibbs p4 number-of-samples
-                                         :burn-in burn-in)))
+    (let [reference (map #(if % 1.0 0.0)
+                         (anglican-query :lmh anglican-p4 number-of-samples
+                                         :burn-in burn-in))
+          result (map #(if % 1.0 0.0)
+                      (angler-query :gibbs p4 number-of-samples
+                                    :burn-in burn-in))
           r-mean (mean reference)
           r-std (std reference)
           m (mean result)
@@ -179,10 +177,9 @@
 (deftest gibbs-program-5
   (testing "program 5 with Gibbs sampling"
     (println "running program 5 with Gibbs sampling")
-    (let [;reference (vec (anglican-query :lmh anglican-p5 number-of-samples
-          ;                          :burn-in burn-in))
-          result (vec (angler-query :gibbs p5 number-of-samples
-                                    :burn-in burn-in))
+    (let [;reference (anglican-query :lmh anglican-p5 number-of-samples
+          ;                          :burn-in burn-in)
+          result (angler-query :gibbs p5 number-of-samples :burn-in burn-in)
           ;r-x-mean (mean (map first reference))
           ;r-x-variance (variance (map first reference))
           ;r-y-mean (mean (map second reference))
@@ -205,9 +202,9 @@
 (deftest hmc-program-1
   (testing "program 1 with HMC"
     (println "running program 1 with HMC")
-    (let [reference (vec (anglican-query :lmh anglican-p1 number-of-samples
-                                         :burn-in burn-in))
-          result (vec (angler-query :hmc p1 number-of-samples :burn-in burn-in))
+    (let [reference (anglican-query :lmh anglican-p1 number-of-samples
+                                        :burn-in burn-in)
+          result (angler-query :hmc p1 number-of-samples :burn-in burn-in)
           r-mean (mean reference)
           r-std (std reference)
           m (mean result)
