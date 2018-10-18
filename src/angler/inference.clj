@@ -84,23 +84,25 @@
            new-chi chi
            new-R R-half]
       (if (> 1 i)
-        (let [d (nth (autodiff U (map new-chi args)) 1)]
+        (let [new-new-chi (into {} (map (fn [[x v]]
+                                          [x (+ v (* epsilon (new-R x)))])
+                                        new-chi))
+              d (nth (autodiff U (map new-new-chi args)) 1)]
           (recur (- i 1)
-                 (into {} (map (fn [[x v]] [x (+ v (* epsilon (new-R x)))])
-                               new-chi))
+                 new-new-chi
                  (into {} (map (fn [[x v]] [x (- v (* epsilon (d x)))])
                                new-R))))
         (let [d (nth (autodiff U (map new-chi args)) 1)]
           [(into {} (map (fn [[x v]] [x (+ v (* epsilon (new-R x)))])
                          new-chi))
            (into {} (map (fn [[x v]] [x (- v (* 0.5 epsilon (d x)))])
-                         R))])))))
+                         new-R))])))))
 
 (defn- hamiltonian
   [^IPersistentMap X ^IPersistentMap chi ^IPersistentMap R ^double stddev]
   (apply +
          (* 0.5 (apply + (map (fn [[_ v]] (/ (* v v) stddev)) R)))
-         (map (fn [[x [args _ func]]]
+         (map (fn [[x [args func]]]
                 (- (observe* (apply func (map chi args)) (chi x))))
               X)))
 
@@ -144,9 +146,9 @@
                                  vars (disj (free-vars {} e) x)
                                  args (vec (filter vars ordering))]
                              [x [args
-                                 e
                                  (binding [*ns* (in-ns 'angler.primitives)]
-                                   (eval (list 'fn args e)))]])
+                                   (eval (list 'fn args
+                                               (bind-free-variables Y e))))]])
                           P))
         normal-dist (normal 0 stddev)
         X (apply dissoc P-func (keys Y))
@@ -157,7 +159,7 @@
                                         Y (fix-up-expression x e))
                                    acc))
                            0
-                           X))]
+                           P))]
     (hmc-infinite-sequence P-func X U chi t epsilon stddev normal-dist)))
 
 (def ^:private algorithms
