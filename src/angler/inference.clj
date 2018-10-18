@@ -45,7 +45,7 @@
 (defn- gibbs-infinite-sequence
   [^IPersistentMap P ^IPersistentMap X ^IPersistentMap chi]
   (let [new-chi (gibbs-step P X chi)]
-    (lazy-seq (cons new-chi (gibbs-infinite-sequence P X new-chi)))))
+    (cons new-chi (lazy-seq (gibbs-infinite-sequence P X new-chi)))))
 
 (defn- gibbs
   [^Graph {:keys [P Y] :as graph} & options]
@@ -113,9 +113,10 @@
                                       (hamiltonian X new-chi new-R stddev))))
                        new-chi
                        chi)]
-    (lazy-seq selected-chi
-              (hmc-infinite-sequence
-                ordering P X U selected-chi t epsilon stddev normal-dist))))
+    (cons selected-chi
+          (lazy-seq
+            (hmc-infinite-sequence
+              ordering P X U selected-chi t epsilon stddev normal-dist)))))
 
 (defn- fix-up-expression
   [^Symbol x expr]
