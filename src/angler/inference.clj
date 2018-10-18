@@ -1,5 +1,7 @@
 (ns angler.inference
-  (:require [anglican.runtime :refer [uniform-continuous exp observe* sample*]]
+  (:require [anglican.runtime :refer [uniform-continuous exp normal observe*
+                                      sample*]]
+            [angler.autodiff :refer [autodiff]]
             [angler.errors :refer [check-error checked-> query-error]]
             [angler.passes.compile :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
@@ -8,7 +10,8 @@
             [angler.types :refer [ancestral-ordering bind-free-variables
                                   free-vars peval sample-from-prior]])
   (:import [angler.types Graph]
-           [clojure.lang IFn IPersistentMap IPersistentVector Keyword Symbol]))
+           [clojure.lang IFn IPersistentList IPersistentMap IPersistentVector
+            Keyword Symbol]))
 
 (defn- accept
   [^IPersistentMap P ^Symbol x ^IPersistentVector args
@@ -71,8 +74,94 @@
         chi (into (sample-from-prior graph ordering) Y)]
     (gibbs-infinite-sequence P-dependents X chi)))
 
+(defn- leapfrog
+  [ordering ^IPersistentList U ^IPersistentMap chi ^IPersistentMap R t epsilon]
+  (let [R-half (into {} (map (fn [[x v]]
+                               [x (- (R x) (* 0.5 epsilon v))])
+                             (nth (autodiff U (map chi ordering)) 1)))]
+    (loop [i t
+           new-chi chi
+           new-R R-half]
+      (if (> 1 i)
+        (let [d (nth (autodiff U (map new-chi ordering)) 1)]
+          (recur (- i 1)
+                 (into {} (map (fn [[x v]] [x (+ v (* epsilon (new-R x)))])
+                               new-chi))
+                 (into {} (map (fn [[x v]] [x (- v (* epsilon (d x)))])
+                               new-R))))
+        (let [d (nth (autodiff U (map new-chi ordering)) 1)]
+          [(into {} (map (fn [[x v]] [x (+ v (* epsilon (new-R x)))])
+                         new-chi))
+           (into {} (map (fn [[x v]] [x (- v (* 0.5 epsilon (d x)))])
+                         R))])))))
+
+(defn- hamiltonian
+  [^IPersistentMap X ^IPersistentMap chi ^IPersistentMap R ^double stddev]
+  (apply +
+         (* 0.5 (apply + (map (fn [[_ v]] (/ (* v v) stddev)) R)))
+         (map (fn [[x [args _ func]]]
+                (- (observe* (apply func (map chi args)) (chi x))))
+              X)))
+
+(defn- hmc-infinite-sequence
+  [ordering ^IPersistentMap P ^IPersistentMap X ^IPersistentList U
+   ^IPersistentMap chi t epsilon stddev normal-dist]
+  (let [R (into {} (map #(vector (nth % 0) (sample* normal-dist)) X))
+        [new-chi new-R] (leapfrog ordering U chi R t epsilon)
+        u (sample* (uniform-continuous 0 1))
+        selected-chi (if (< u (exp (- (hamiltonian X chi R stddev)
+                                      (hamiltonian X new-chi new-R stddev))))
+                       new-chi
+                       chi)]
+    (lazy-seq selected-chi
+              (hmc-infinite-sequence
+                ordering P X U selected-chi t epsilon stddev normal-dist))))
+
+(defn- fix-up-expression
+  [^Symbol x expr]
+  (cond
+    (and (list? expr) (= 'normal (first expr)))
+    (apply list 'normpdf x (map #(fix-up-expression x %) (rest expr)))
+
+    (map? expr) (into {} (map #(fix-up-expression x %) expr))
+
+    (seqable? expr) (apply (cond
+                             (vector? expr) vec
+                             (set? expr) set
+                             :else list)
+                           (map #(fix-up-expression x %) expr))
+
+    :else expr))
+
+(defn- hmc
+  [^Graph {:keys [P Y] :as graph}
+   & {:keys [epsilon t stddev] :or {epsilon 0.1, stddev 1, t 10}}]
+  (let [ordering (ancestral-ordering graph)
+        P-func (into {}
+                     (map #(let [[x e] %
+                                 vars (disj (free-vars {} e) x)
+                                 args (vec (filter vars ordering))]
+                             [x [args
+                                 e
+                                 (binding [*ns* (in-ns 'angler.primitives)]
+                                   (eval (list 'fn args e)))]])
+                          P))
+        normal-dist (normal 0 stddev)
+        X (apply dissoc P-func (keys Y))
+        chi (sample-from-prior graph ordering)
+        U (list 'fn (vec (filter X ordering))
+                (reduce-kv (fn [acc x [_ e]]
+                             (list '+ (bind-free-variables
+                                        Y (fix-up-expression x e))
+                                   acc))
+                           0
+                           X))]
+    (hmc-infinite-sequence
+      ordering P-func X U chi t epsilon stddev normal-dist)))
+
 (def ^:private algorithms
-  {:gibbs gibbs})
+  {:gibbs gibbs
+   :hmc hmc})
 
 (defn query
   [^Keyword algorithm ^IPersistentVector program & options]

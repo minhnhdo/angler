@@ -1,6 +1,6 @@
 (ns angler.inference-test
   (:require [clojure.test :refer :all]
-            [angler.test-utils :refer [abs-no-branching d=]]
+            [angler.test-utils :refer [abs-no-branching d=5%]]
             [anglican.core :refer [doquery]]
             [anglican.emit :refer [defm defquery with-primitive-procedures]]
             [anglican.runtime :refer [dirichlet discrete flip gamma mean normal
@@ -96,13 +96,9 @@
       (observe (dirac (+ x y)) 7)
       [x y])))
 
-(defn d=5%
-  [^double reference ^double result]
-  (d= reference result (abs-no-branching (* 0.05 reference))))
-
-(deftest program-1
+(deftest gibbs-program-1
   (testing "program 1 with Gibbs sampling"
-    (println "running program 1")
+    (println "running program 1 with Gibbs sampling")
     (let [reference (vec (anglican-query :rmh anglican-p1 number-of-samples
                                          :burn-in burn-in))
           result (vec (angler-query :gibbs p1 number-of-samples
@@ -117,9 +113,9 @@
       (is (d=5% r-mean m))
       (is (d=5% r-std s)))))
 
-(deftest program-2
+(deftest gibbs-program-2
   (testing "program 2 with Gibbs sampling"
-    (println "running program 2")
+    (println "running program 2 with Gibbs sampling")
     (let [reference (vec (anglican-query :rmh anglican-p2 number-of-samples
                                          :burn-in burn-in))
           result (vec (angler-query :gibbs p2 number-of-samples
@@ -142,9 +138,9 @@
       (is (d=5% r-bias-mean bias-mean))
       (is (d=5% r-bias-std bias-std)))))
 
-(deftest program-3
+(deftest gibbs-program-3
   (testing "program 3 with Gibbs sampling"
-    (println "running program 3")
+    (println "running program 3 with Gibbs sampling")
     (let [reference (vec (map #(if % 1.0 0.0)
                               (anglican-query :rmh anglican-p3 number-of-samples
                                               :burn-in burn-in)))
@@ -161,9 +157,9 @@
       (is (d=5% r-mean m))
       (is (d=5% r-std s)))))
 
-(deftest program-4
+(deftest gibbs-program-4
   (testing "program 4 with Gibbs sampling"
-    (println "running program 4")
+    (println "running program 4 with Gibbs sampling")
     (let [reference (vec (map #(if % 1.0 0.0)
                               (anglican-query :rmh anglican-p4 number-of-samples
                                               :burn-in burn-in)))
@@ -180,9 +176,9 @@
       (is (d=5% r-mean m))
       (is (d=5% r-std s)))))
 
-(deftest program-5
+(deftest gibbs-program-5
   (testing "program 5 with Gibbs sampling"
-    (println "running program 5")
+    (println "running program 5 with Gibbs sampling")
     (let [;reference (vec (anglican-query :rmh anglican-p5 number-of-samples
           ;                          :burn-in burn-in))
           result (vec (angler-query :gibbs p5 number-of-samples
@@ -205,3 +201,19 @@
       ;(is (d=5% r-y-mean y-mean))
       ;(is (d=5% r-y-variance y-variance))
       )))
+
+(deftest hmc-program-1
+  (testing "program 1 with HMC"
+    (println "running program 1 with HMC")
+    (let [reference (vec (anglican-query :rmh anglican-p1 number-of-samples
+                                         :burn-in burn-in))
+          result (vec (angler-query :hmc p1 number-of-samples :burn-in burn-in))
+          r-mean (mean reference)
+          r-std (std reference)
+          m (mean result)
+          s (std result)]
+      (println "program 1")
+      (println "reference" r-mean r-std)
+      (println "result" m s)
+      (is (d=5% r-mean m))
+      (is (d=5% r-std s)))))
