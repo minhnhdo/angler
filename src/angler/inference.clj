@@ -10,25 +10,20 @@
   (:import [angler.types Graph]
            [clojure.lang IFn IPersistentMap IPersistentVector Keyword Symbol]))
 
-(defn- dependents
-  [^IPersistentMap m ^Symbol x]
-  (conj (set (map first (filter (fn [[_ [args _]]] (some #(= x %) args)) m)))
-        x))
-
 (defn- accept
-  [^IPersistentMap P ^Symbol x ^IPersistentVector args ^IFn func
-   ^IPersistentMap new-chi ^IPersistentMap chi]
+  [^IPersistentMap P ^Symbol x ^IPersistentVector args
+   ^IPersistentVector dependents ^IFn func ^IPersistentMap new-chi
+   ^IPersistentMap chi]
   (let [d (apply func (map chi args))
         new-d (apply func (map new-chi args))
-        loga (- (observe* new-d (chi x)) (observe* d (new-chi x)))
-        Vx (dependents P x)]
+        loga (- (observe* new-d (chi x)) (observe* d (new-chi x)))]
     (exp (apply +
                 loga
-                (map #(let [[vargs vfunc] (P %)]
+                (map #(let [[vargs _ vfunc] (P %)]
                         (- (observe* (apply vfunc (map new-chi vargs))
                                      (new-chi %))
                            (observe* (apply vfunc (map chi vargs)) (chi %))))
-                     Vx)))))
+                     dependents)))))
 
 (defn- gibbs-step
   ^IPersistentMap
@@ -36,10 +31,10 @@
   (loop [to-do X
          chi sub]
     (if (seq to-do)
-      (let [[[x [args func]] & new-to-do] to-do
+      (let [[[x [args dependents func]] & new-to-do] to-do
             dist (apply func (map chi args))
             new-chi (assoc chi x (sample* dist))
-            a (accept P x args func new-chi chi)
+            a (accept P x args dependents func new-chi chi)
             u (sample* (uniform-continuous 0 1))]
         (recur new-to-do (if (< u a) new-chi chi)))
       chi)))
@@ -50,19 +45,30 @@
     (lazy-seq (cons new-chi (gibbs-infinite-sequence P X new-chi)))))
 
 (defn- gibbs
-  ([^Graph {:keys [P Y] :as graph} & {:keys [burn-in] :or {burn-in 5000}}]
+  ([^Graph {:keys [P Y] :as graph} & options]
    (let [ordering (ancestral-ordering graph)
-         P-enhanced (into {}
-                          (map #(let [[x e] %
-                                      vars (disj (free-vars {} e) x)
-                                      args (vec (filter vars ordering))]
-                                  [x [args
-                                      (binding [*ns* (in-ns 'angler.primitives)]
-                                        (eval (list 'fn args e)))]])
-                               P))
-         X (apply dissoc P-enhanced (keys Y))
+         P-func (into {}
+                      (map #(let [[x e] %
+                                  vars (disj (free-vars {} e) x)
+                                  args (vec (filter vars ordering))]
+                              [x [args
+                                  (binding [*ns* (in-ns 'angler.primitives)]
+                                    (eval (list 'fn args e)))]])
+                           P))
+         P-dependents (into {}
+                            (map (fn [[x [a f]]]
+                                   [x [a
+                                       (conj (mapv first
+                                                   (filter (fn [[_ [args _]]]
+                                                             (some #(= x %)
+                                                                   args))
+                                                           P-func))
+                                             x)
+                                       f]])
+                                 P-func))
+         X (apply dissoc P-dependents (keys Y))
          chi (into (sample-from-prior graph ordering) Y)]
-     (drop burn-in (gibbs-infinite-sequence P-enhanced X chi)))))
+     (gibbs-infinite-sequence P-dependents X chi))))
 
 (def ^:private algorithms
   {:gibbs gibbs})
@@ -75,13 +81,14 @@
                  check-error validate
                  check-error scope
                  check-error desugar
-                 check-error compile-to-graph)]
+                 check-error compile-to-graph)
+        {:keys [burn-in] :or {burn-in 10000}} options]
     (cond
       (nil? alg) (query-error "Unknown algorithm " algorithm)
       (:angler.errors/error output) output
       :else (let [[graph result] output]
               (map #(peval (bind-free-variables % result))
-                   (apply alg graph options))))))
+                   (drop burn-in (apply alg graph options)))))))
 
 (def p1
   '[(let [mu (sample (normal 1 (sqrt 5)))
