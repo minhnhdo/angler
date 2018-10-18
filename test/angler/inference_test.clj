@@ -99,7 +99,7 @@
 (deftest gibbs-program-1
   (testing "program 1 with Gibbs sampling"
     (println "running program 1 with Gibbs sampling")
-    (let [reference (vec (anglican-query :rmh anglican-p1 number-of-samples
+    (let [reference (vec (anglican-query :lmh anglican-p1 number-of-samples
                                          :burn-in burn-in))
           result (vec (angler-query :gibbs p1 number-of-samples
                                     :burn-in burn-in))
@@ -116,7 +116,7 @@
 (deftest gibbs-program-2
   (testing "program 2 with Gibbs sampling"
     (println "running program 2 with Gibbs sampling")
-    (let [reference (vec (anglican-query :rmh anglican-p2 number-of-samples
+    (let [reference (vec (anglican-query :lmh anglican-p2 number-of-samples
                                          :burn-in burn-in))
           result (vec (angler-query :gibbs p2 number-of-samples
                                     :burn-in burn-in))
@@ -142,7 +142,7 @@
   (testing "program 3 with Gibbs sampling"
     (println "running program 3 with Gibbs sampling")
     (let [reference (vec (map #(if % 1.0 0.0)
-                              (anglican-query :rmh anglican-p3 number-of-samples
+                              (anglican-query :lmh anglican-p3 number-of-samples
                                               :burn-in burn-in)))
           result (vec (map #(if % 1.0 0.0)
                            (angler-query :gibbs p3 number-of-samples
@@ -161,7 +161,7 @@
   (testing "program 4 with Gibbs sampling"
     (println "running program 4 with Gibbs sampling")
     (let [reference (vec (map #(if % 1.0 0.0)
-                              (anglican-query :rmh anglican-p4 number-of-samples
+                              (anglican-query :lmh anglican-p4 number-of-samples
                                               :burn-in burn-in)))
           result (vec (map #(if % 1.0 0.0)
                            (angler-query :gibbs p4 number-of-samples
@@ -179,7 +179,7 @@
 (deftest gibbs-program-5
   (testing "program 5 with Gibbs sampling"
     (println "running program 5 with Gibbs sampling")
-    (let [;reference (vec (anglican-query :rmh anglican-p5 number-of-samples
+    (let [;reference (vec (anglican-query :lmh anglican-p5 number-of-samples
           ;                          :burn-in burn-in))
           result (vec (angler-query :gibbs p5 number-of-samples
                                     :burn-in burn-in))
@@ -205,7 +205,7 @@
 (deftest hmc-program-1
   (testing "program 1 with HMC"
     (println "running program 1 with HMC")
-    (let [reference (vec (anglican-query :rmh anglican-p1 number-of-samples
+    (let [reference (vec (anglican-query :lmh anglican-p1 number-of-samples
                                          :burn-in burn-in))
           result (vec (angler-query :hmc p1 number-of-samples :burn-in burn-in))
           r-mean (mean reference)
