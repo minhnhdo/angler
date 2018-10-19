@@ -80,46 +80,44 @@
         R-half (into {} (map (fn [[x v]]
                                [x (- (R x) (* 0.5 epsilon v))])
                              (nth (autodiff U (map chi args)) 1)))]
-    (loop [i t
+    (loop [i 1
            new-chi chi
            new-R R-half]
-      (if (> 1 i)
-        (let [new-new-chi (into {} (map (fn [[x v]]
-                                          [x (+ v (* epsilon (new-R x)))])
-                                        new-chi))
-              d (nth (autodiff U (map new-new-chi args)) 1)]
-          (recur (- i 1)
+      (let [new-new-chi (into {} (map (fn [[x v]]
+                                        [x (+ v (* epsilon (new-R x)))])
+                                      new-chi))
+            d (nth (autodiff U (map new-new-chi args)) 1)]
+        (if (< i t)
+          (recur (+ i 1)
                  new-new-chi
                  (into {} (map (fn [[x v]] [x (- v (* epsilon (d x)))])
-                               new-R))))
-        (let [d (nth (autodiff U (map new-chi args)) 1)]
-          [(into {} (map (fn [[x v]] [x (+ v (* epsilon (new-R x)))])
-                         new-chi))
+                               new-R)))
+          [new-new-chi
            (into {} (map (fn [[x v]] [x (- v (* 0.5 epsilon (d x)))])
                          new-R))])))))
 
 (defn- hamiltonian
-  [^IPersistentMap X ^IPersistentMap chi ^IPersistentMap R ^double stddev]
-  (apply +
-         (* 0.5 (apply + (map (fn [[_ v]] (/ (* v v) stddev)) R)))
-         (map (fn [[x [args func]]]
-                (- (observe* (apply func (map chi args)) (chi x))))
-              X)))
+  [^IPersistentVector args ^IFn U-func ^IPersistentMap chi ^IPersistentMap R
+   stddev]
+  (+ (* 0.5 (apply + (map (fn [[_ v]] (/ (* v v) (* stddev stddev))) R)))
+     (apply U-func (map chi args))))
 
 (defn- hmc-infinite-sequence
-  [^IPersistentMap P ^IPersistentMap X ^IPersistentList U ^IPersistentMap chi t
-   epsilon stddev normal-dist]
-  (let [R (into {} (map #(vector (nth % 0) (sample* normal-dist)) X))
+  [^IPersistentList [_ args :as U] ^IFn U-func ^IPersistentMap chi t epsilon
+   stddev normal-dist]
+  (let [R (into {} (map #(vector (nth % 0) (sample* normal-dist)) chi))
         [new-chi new-R] (leapfrog U chi R t epsilon)
         u (sample* (uniform-continuous 0 1))
-        selected-chi (if (< u (exp (- (hamiltonian X chi R stddev)
-                                      (hamiltonian X new-chi new-R stddev))))
+        selected-chi (if (< u (exp (- (hamiltonian
+                                        args U-func chi R stddev)
+                                      (hamiltonian
+                                        args U-func new-chi new-R stddev))))
                        new-chi
                        chi)]
     (cons selected-chi
           (lazy-seq
             (hmc-infinite-sequence
-              P X U selected-chi t epsilon stddev normal-dist)))))
+              U U-func selected-chi t epsilon stddev normal-dist)))))
 
 (defn- fix-up-expression
   [^Symbol x expr]
@@ -139,28 +137,21 @@
 
 (defn- hmc
   [^Graph {:keys [P Y] :as graph}
-   & {:keys [epsilon t stddev] :or {epsilon 0.1, stddev 1, t 10}}]
+   & {:keys [epsilon stddev t] :or {epsilon 0.1, stddev 1, t 10}}]
   (let [ordering (ancestral-ordering graph)
-        P-func (into {}
-                     (map #(let [[x e] %
-                                 vars (disj (free-vars {} e) x)
-                                 args (vec (filter vars ordering))]
-                             [x [args
-                                 (binding [*ns* (in-ns 'angler.primitives)]
-                                   (eval (list 'fn args
-                                               (bind-free-variables Y e))))]])
-                          P))
         normal-dist (normal 0 stddev)
-        X (apply dissoc P-func (keys Y))
         chi (sample-from-prior graph ordering)
-        U (list 'fn (vec (filter X ordering))
-                (reduce-kv (fn [acc x [_ e]]
-                             (list '+ (bind-free-variables
-                                        Y (fix-up-expression x e))
-                                   acc))
-                           0
-                           P))]
-    (hmc-infinite-sequence P-func X U chi t epsilon stddev normal-dist)))
+        U (list 'fn (vec (filter chi ordering))
+                (list '-
+                      0
+                      (reduce-kv (fn [acc x e]
+                                   (list '+ (bind-free-variables
+                                              Y (fix-up-expression x e))
+                                         acc))
+                                 0
+                                 P)))
+        U-func (binding [*ns* (in-ns 'angler.primitives)] (eval U))]
+    (hmc-infinite-sequence U U-func chi t epsilon stddev normal-dist)))
 
 (def ^:private algorithms
   {:gibbs gibbs
