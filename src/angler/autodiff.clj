@@ -1,5 +1,6 @@
 (ns angler.autodiff
-  (:require [anglican.runtime :refer [cos exp log sin sqrt]])
+  (:require [anglican.runtime :refer [cos exp log sin sqrt]]
+            [angler.primitives :refer [normpdf]])
   (:import [clojure.lang IPersistentList IPersistentMap ISeq]))
 
 (def ^:private supported-operations
@@ -23,12 +24,7 @@
          :deriv-fns [cos]}
    'cos {:func cos
          :deriv-fns [(fn [a] (- (sin a)))]}
-   'normpdf {:func (fn [x mu sigma]
-                     (let [x-mu (- x mu)
-                           two-variance (* 2 sigma sigma)]
-                       (log (* (/ 1 (sqrt (* Math/PI two-variance)))
-                               (exp (- (/ (* x-mu x-mu)
-                                          two-variance)))))))
+   'normpdf {:func normpdf
              :deriv-fns [(fn [x mu sigma]
                            (/ (- mu x)
                               (* sigma sigma)))

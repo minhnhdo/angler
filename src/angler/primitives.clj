@@ -41,3 +41,11 @@
   (observe* [this value] (if (= value x)
                            0
                            Double/NEGATIVE_INFINITY)))
+(defn normpdf
+  ^double
+  [^double x ^double mu ^double sigma]
+  (let [x-mu (- x mu)
+        two-variance (* 2 sigma sigma)]
+    (log (* (/ 1 (sqrt (* Math/PI two-variance)))
+            (exp (- (/ (* x-mu x-mu)
+                       two-variance)))))))
