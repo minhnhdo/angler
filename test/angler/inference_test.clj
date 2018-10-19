@@ -6,7 +6,7 @@
             [anglican.runtime :refer [dirichlet discrete flip gamma mean normal
                                       sqrt std variance]]
             [angler.primitives :refer [dirac]]
-            [angler.inference :refer [p1 p2 p3 p4 p5 query]]))
+            [angler.inference :refer [hmc-p3 p1 p2 p3 p4 p5 query]]))
 
 (def number-of-samples 100000)
 
@@ -93,6 +93,12 @@
           y (sample (normal 0 10))]
       (observe (dirac (+ x y)) 7)
       [x y])))
+
+(defquery anglican-hmc-p3 []
+  (let [x (sample (normal 0 10))
+        y (sample (normal 0 10))]
+    (observe (normal (+ x y) 1E-2) 7)
+    [x y]))
 
 (deftest gibbs-program-1
   (testing "program 1 with Gibbs sampling"
@@ -198,8 +204,8 @@
       )))
 
 (deftest hmc-program-1
-  (testing "program 1 with HMC"
-    (println "running program 1 with HMC")
+  (testing "program 1 with HMC sampling"
+    (println "running program 1 with HMC sampling")
     (let [reference (anglican-query :lmh anglican-p1 number-of-samples
                                         :burn-in burn-in)
           result (angler-query :hmc p1 number-of-samples :burn-in burn-in)
@@ -212,3 +218,51 @@
       (println "result" m s)
       (is (d=5% r-mean m))
       (is (d=5% r-std s)))))
+
+(deftest hmc-program-2
+  (testing "program 2 with HMC sampling"
+    (println "running program 2 with HMC sampling")
+    (let [reference (anglican-query :lmh anglican-p2 number-of-samples
+                                    :burn-in burn-in)
+          result (angler-query :hmc p2 number-of-samples :burn-in burn-in)
+          r-slope-mean (mean (map first reference))
+          r-slope-std (std (map first reference))
+          r-bias-mean (mean (map second reference))
+          r-bias-std (std (map second reference))
+          slope-mean (mean (map first result))
+          slope-std (std (map first result))
+          bias-mean (mean (map second result))
+          bias-std (std (map second result))]
+      (println "program 2")
+      (println "reference slope" r-slope-mean r-slope-std)
+      (println "reference bias" r-bias-mean r-bias-std)
+      (println "result slope" slope-mean slope-std)
+      (println "result bias" bias-mean bias-std)
+      (is (d=5% r-slope-mean slope-mean))
+      (is (d=5% r-slope-std slope-std))
+      (is (d=5% r-bias-mean bias-mean))
+      (is (d=5% r-bias-std bias-std)))))
+
+(deftest hmc-program-3
+  (testing "program 3 with HMC sampling"
+    (println "running program 3 with HMC sampling")
+    (let [reference (anglican-query :lmh anglican-hmc-p3 number-of-samples
+                                    :burn-in burn-in)
+          result (angler-query :hmc hmc-p3 number-of-samples :burn-in burn-in)
+          r-x-mean (mean (map first reference))
+          r-x-variance (variance (map first reference))
+          r-y-mean (mean (map second reference))
+          r-y-variance (variance (map second reference))
+          x-mean (mean (map first result))
+          x-variance (variance (map first result))
+          y-mean (mean (map second result))
+          y-variance (variance (map second result))]
+      (println "program 3")
+      (println "reference x ~ (" r-x-mean "," r-x-variance ") y ~("
+               r-y-mean "," r-y-variance ")")
+      (println "result x ~ (" x-mean "," x-variance ") y ~("
+               y-mean "," y-variance ")")
+      (is (d=5% r-x-mean x-mean))
+      (is (d=5% r-x-variance x-variance))
+      (is (d=5% r-y-mean y-mean))
+      (is (d=5% r-y-variance y-variance)))))

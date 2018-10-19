@@ -239,3 +239,9 @@
           y (sample (normal 0 10))]
       (observe (dirac (+ x y)) 7)
       [x y])])
+
+(def hmc-p3
+  '[(let [x (sample (normal 0 10))
+          y (sample (normal 0 10))]
+      (observe (normal (+ x y) 1E-2) 7)
+      [x y])])
