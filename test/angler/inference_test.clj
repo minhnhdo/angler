@@ -1,12 +1,10 @@
 (ns angler.inference-test
   (:require [clojure.test :refer :all]
-            [angler.test-utils :refer [abs-no-branching d=5%]]
+            [angler.test-utils :refer [d=5%]]
             [anglican.core :refer [doquery]]
             [anglican.emit :refer [defm defquery with-primitive-procedures]]
             [anglican.runtime :refer [dirichlet discrete flip gamma mean normal
                                       sqrt std variance]]
-            [anglican.stat :refer [collect-by empirical-mean]]
-            [angler.errors :refer [debug]]
             [angler.primitives :refer [dirac]]
             [angler.inference :refer [p1 p2 p3 p4 p5 query]]))
 
