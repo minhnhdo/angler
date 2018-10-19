@@ -5,13 +5,13 @@
 
 (def ^:private supported-operations
   {'+ {:func +
-       :deriv-fns [(fn [a b] 1) (fn [a b] 1)]}
+       :deriv-fns [(fn [_ _] 1) (fn [_ _] 1)]}
    '- {:func -
-       :deriv-fns [(fn [a b] 1) (fn [a b] -1)]}
+       :deriv-fns [(fn [_ _] 1) (fn [_ _] -1)]}
    '* {:func *
-       :deriv-fns [(fn [a b] b) (fn [a b] a)]}
+       :deriv-fns [(fn [_ b] b) (fn [a _] a)]}
    '/ {:func /
-       :deriv-fns [(fn [a b] (/ 1 b)) (fn [a b] (* a (/ -1 (* b b))))]}
+       :deriv-fns [(fn [_ b] (/ 1 b)) (fn [a b] (* a (/ -1 (* b b))))]}
    'exp {:func exp
          :deriv-fns [exp]}
    'log {:func log

@@ -48,7 +48,7 @@
     (cons new-chi (lazy-seq (gibbs-infinite-sequence P X new-chi)))))
 
 (defn- gibbs
-  [^Graph {:keys [P Y] :as graph} & options]
+  [^Graph {:keys [P Y] :as graph} & _]
   (let [ordering (ancestral-ordering graph)
         P-func (into {}
                      (map #(let [[x e] %
