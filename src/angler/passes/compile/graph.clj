@@ -136,7 +136,7 @@
     :else [(empty-graph) e]))
 
 (defn compile-to-graph
-  [program]
+  [^IPersistentVector program]
   (let [procs (into {} (map #(vector (second %) %)) (pop program))
         exp (peek program)]
     (try

@@ -3,6 +3,7 @@
                                       sample*]]
             [angler.autodiff :refer [autodiff]]
             [angler.errors :refer [check-error checked-> query-error]]
+            [angler.passes.compile.clojure-function :refer [compile-to-function]]
             [angler.passes.compile.graph :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.scope :refer [scope]]
@@ -173,6 +174,20 @@
       :else (let [[graph result] output]
               (map #(peval (bind-free-variables % result))
                    (drop burn-in (apply alg graph options)))))))
+
+(defn interp
+  [^IPersistentVector program & {:keys [burn-in] :or {burn-in 10000}}]
+  (let [output (checked->
+                 program
+                 check-error validate
+                 check-error scope
+                 check-error desugar
+                 check-error compile-to-function)]
+    (if (:angler.errors/error output)
+      output
+      (drop burn-in
+            (repeatedly #(let [log-weight (atom 0)]
+                           [(output log-weight) (deref log-weight)]))))))
 
 (def p1
   '[(let [mu (sample (normal 1 (sqrt 5)))

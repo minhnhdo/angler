@@ -6,7 +6,7 @@
             [anglican.runtime :refer [dirichlet discrete flip gamma mean normal
                                       sqrt std variance]]
             [angler.primitives :refer [dirac]]
-            [angler.inference :refer [hmc-p3 p1 p2 p3 p4 p5 query]]))
+            [angler.inference :refer [hmc-p3 p1 p2 p3 p4 p5 query interp]]))
 
 (def number-of-samples 100000)
 
@@ -266,3 +266,21 @@
       (is (d=5% r-x-variance x-variance))
       (is (d=5% r-y-mean y-mean))
       (is (d=5% r-y-variance y-variance)))))
+
+(deftest interp-program-1
+  (testing "program 1 with likelihood weighting interpreter"
+    (println "running program 1 likelihood weighting interpreter")
+    (let [;reference (anglican-query :lmh anglican-p1 number-of-samples
+          ;                              :burn-in burn-in)
+          result (take number-of-samples (interp p1 :burn-in burn-in))
+          ;r-mean (mean reference)
+          ;r-std (std reference)
+          ;m (mean result)
+          ;s (std result)
+          ]
+      (println "program 1")
+      (println (take 10 (drop burn-in result)))
+      ;(println "reference" r-mean r-std)
+      ;(println "result" m s)
+      #_(is (d=5% r-mean m))
+      #_(is (d=5% r-std s)))))
