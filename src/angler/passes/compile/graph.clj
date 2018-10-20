@@ -1,4 +1,4 @@
-(ns angler.passes.compile
+(ns angler.passes.compile.graph
   (:require [clojure.set :refer [intersection union]]
             [anglican.runtime :refer [distribution]]
             [angler.errors :refer [checks compile-error]]

@@ -6,7 +6,7 @@
             [clojure.tools.cli :refer [parse-opts]]
             [angler.autodiff :refer [autodiff p1 p2 p3 p4 p5 p6 p7]]
             [angler.errors :refer [check-error checked->]]
-            [angler.passes.compile :refer [compile-to-graph]]
+            [angler.passes.compile.graph :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.parse :refer [parse]]
             [angler.passes.scope :refer [scope]]

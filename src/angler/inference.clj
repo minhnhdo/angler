@@ -3,7 +3,7 @@
                                       sample*]]
             [angler.autodiff :refer [autodiff]]
             [angler.errors :refer [check-error checked-> query-error]]
-            [angler.passes.compile :refer [compile-to-graph]]
+            [angler.passes.compile.graph :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.scope :refer [scope]]
             [angler.passes.validate :refer [validate]]
