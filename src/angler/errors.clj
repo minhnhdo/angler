@@ -71,9 +71,9 @@
   {::error ::graph-error
    ::message (apply str args)})
 
-(defn query-error
+(defn infer-error
   [& args]
-  {::error ::query-error
+  {::error ::infer-error
    ::message (apply str args)})
 
 (defn read-error

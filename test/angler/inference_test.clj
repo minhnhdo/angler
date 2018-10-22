@@ -270,17 +270,17 @@
 (deftest interp-program-1
   (testing "program 1 with likelihood weighting interpreter"
     (println "running program 1 likelihood weighting interpreter")
-    (let [;reference (anglican-query :lmh anglican-p1 number-of-samples
-          ;                              :burn-in burn-in)
-          result (take number-of-samples (interp p1 :burn-in burn-in))
-          ;r-mean (mean reference)
-          ;r-std (std reference)
-          ;m (mean result)
-          ;s (std result)
-          ]
+    (let [reference (anglican-query :lmh anglican-p1 number-of-samples
+                                    :burn-in burn-in)
+          result (take number-of-samples (map first
+                                              (interp :imh p1
+                                                      :burn-in burn-in)))
+          r-mean (mean reference)
+          r-std (std reference)
+          m (mean result)
+          s (std result)]
       (println "program 1")
-      (println (take 10 (drop burn-in result)))
-      ;(println "reference" r-mean r-std)
-      ;(println "result" m s)
-      #_(is (d=5% r-mean m))
-      #_(is (d=5% r-std s)))))
+      (println "reference" r-mean r-std)
+      (println "result" m s)
+      (is (d=5% r-mean m))
+      (is (d=5% r-std s)))))

@@ -2,7 +2,7 @@
   (:require [anglican.runtime :refer [uniform-continuous exp normal observe*
                                       sample*]]
             [angler.autodiff :refer [autodiff]]
-            [angler.errors :refer [check-error checked-> query-error]]
+            [angler.errors :refer [check-error checked-> infer-error]]
             [angler.passes.compile.clojure-function :refer [compile-to-function]]
             [angler.passes.compile.graph :refer [compile-to-graph]]
             [angler.passes.desugar :refer [desugar]]
@@ -11,8 +11,8 @@
             [angler.types :refer [ancestral-ordering bind-free-variables
                                   free-vars peval sample-from-prior]])
   (:import [angler.types Graph]
-           [clojure.lang IFn IPersistentList IPersistentMap IPersistentVector
-            Keyword Symbol]))
+           [clojure.lang Atom IFn IPersistentList IPersistentMap
+            IPersistentVector Keyword Symbol]))
 
 (defn- accept
   [^IPersistentMap P ^Symbol x ^IPersistentVector args
@@ -154,13 +154,13 @@
         U-func (binding [*ns* (in-ns 'angler.primitives)] (eval U))]
     (hmc-infinite-sequence U U-func chi t epsilon stddev normal-dist)))
 
-(def ^:private algorithms
+(def ^:private query-algorithms
   {:gibbs gibbs
    :hmc hmc})
 
 (defn query
   [^Keyword algorithm ^IPersistentVector program & options]
-  (let [alg (algorithms algorithm)
+  (let [alg (query-algorithms algorithm)
         output (checked->
                  program
                  check-error validate
@@ -169,25 +169,59 @@
                  check-error compile-to-graph)
         {:keys [burn-in] :or {burn-in 10000}} options]
     (cond
-      (nil? alg) (query-error "Unknown algorithm " algorithm)
+      (nil? alg) (infer-error "Unknown algorithm " algorithm
+                              " for compiled graph")
       (:angler.errors/error output) output
       :else (let [[graph result] output]
               (map #(peval (bind-free-variables % result))
                    (drop burn-in (apply alg graph options)))))))
 
+(defn- likelihood-weighting
+  [^IFn func & _]
+  (repeatedly #(let [log-weight (atom 0)
+                     result (func log-weight)]
+                 [result (deref log-weight)])))
+
+(defn- imh-infinite-sequence
+  [^IFn func ^Atom log-weight result]
+  (cons [result 0]
+        (lazy-seq (let [old-log-weight (deref log-weight)
+                        old-weight (exp old-log-weight)]
+                    (reset! log-weight 0)
+                    (let [new-result (func log-weight)
+                          new-weight (exp (deref log-weight))
+                          u (sample* (uniform-continuous 0 1))
+                          chosen-result (if (< u (/ new-weight old-weight))
+                                          new-result
+                                          (do (reset! log-weight old-log-weight)
+                                              result))]
+                      (imh-infinite-sequence func log-weight chosen-result))))))
+
+(defn- imh
+  [^IFn func & _]
+  (let [log-weight (atom 0)
+        result (func log-weight)]
+    (imh-infinite-sequence func log-weight result)))
+
+(def ^:private interp-algorithm
+  {:likelihood-weighting likelihood-weighting
+   :imh imh})
+
 (defn interp
-  [^IPersistentVector program & {:keys [burn-in] :or {burn-in 10000}}]
-  (let [output (checked->
+  [^Keyword algorithm ^IPersistentVector program & options]
+  (let [alg (interp-algorithm algorithm)
+        {:keys [burn-in] :or {burn-in 10000}} options
+        output (checked->
                  program
                  check-error validate
                  check-error scope
                  check-error desugar
                  check-error compile-to-function)]
-    (if (:angler.errors/error output)
-      output
-      (drop burn-in
-            (repeatedly #(let [log-weight (atom 0)]
-                           [(output log-weight) (deref log-weight)]))))))
+    (cond
+      (nil? alg) (infer-error "Unknown algorithm " algorithm
+                              " for interpreting")
+      (:angler.errors/error output) output
+      :else (drop burn-in (apply alg output options)))))
 
 (def p1
   '[(let [mu (sample (normal 1 (sqrt 5)))
