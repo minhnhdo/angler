@@ -103,7 +103,8 @@
 (deftest gibbs-program-1
   (testing "program 1 with Gibbs sampling"
     (println "running program 1 with Gibbs sampling")
-    (let [reference (anglican-query :lmh anglican-p1 number-of-samples
+    (let [reference (anglican-query :smc anglican-p1 number-of-samples
+                                    :number-of-particles 10000
                                     :burn-in burn-in)
           result (angler-query :gibbs p1 number-of-samples :burn-in burn-in)
           r-mean (mean reference)
@@ -119,7 +120,8 @@
 (deftest gibbs-program-2
   (testing "program 2 with Gibbs sampling"
     (println "running program 2 with Gibbs sampling")
-    (let [reference (anglican-query :lmh anglican-p2 number-of-samples
+    (let [reference (anglican-query :smc anglican-p2 number-of-samples
+                                    :number-of-particles 10000
                                     :burn-in burn-in)
           result (angler-query :gibbs p2 number-of-samples :burn-in burn-in)
           r-slope-mean (mean (map first reference))
@@ -144,7 +146,8 @@
   (testing "program 3 with Gibbs sampling"
     (println "running program 3 with Gibbs sampling")
     (let [reference (map #(if % 1.0 0.0)
-                         (anglican-query :lmh anglican-p3 number-of-samples
+                         (anglican-query :smc anglican-p3 number-of-samples
+                                         :number-of-particles 10000
                                          :burn-in burn-in))
           result (map #(if % 1.0 0.0)
                       (angler-query :gibbs p3 number-of-samples
@@ -163,7 +166,8 @@
   (testing "program 4 with Gibbs sampling"
     (println "running program 4 with Gibbs sampling")
     (let [reference (map #(if % 1.0 0.0)
-                         (anglican-query :lmh anglican-p4 number-of-samples
+                         (anglican-query :smc anglican-p4 number-of-samples
+                                         :number-of-particles 10000
                                          :burn-in burn-in))
           result (map #(if % 1.0 0.0)
                       (angler-query :gibbs p4 number-of-samples
@@ -181,7 +185,8 @@
 (deftest gibbs-program-5
   (testing "program 5 with Gibbs sampling"
     (println "running program 5 with Gibbs sampling")
-    (let [;reference (anglican-query :lmh anglican-p5 number-of-samples
+    (let [;reference (anglican-query :smc anglican-p5 number-of-samples
+          ;                          :number-of-particles 10000
           ;                          :burn-in burn-in)
           result (angler-query :gibbs p5 number-of-samples :burn-in burn-in)
           ;r-x-mean (mean (map first reference))
@@ -206,8 +211,9 @@
 (deftest hmc-program-1
   (testing "program 1 with HMC sampling"
     (println "running program 1 with HMC sampling")
-    (let [reference (anglican-query :lmh anglican-p1 number-of-samples
-                                        :burn-in burn-in)
+    (let [reference (anglican-query :smc anglican-p1 number-of-samples
+                                    :number-of-particles 10000
+                                    :burn-in burn-in)
           result (angler-query :hmc p1 number-of-samples :burn-in burn-in)
           r-mean (mean reference)
           r-std (std reference)
@@ -222,7 +228,8 @@
 (deftest hmc-program-2
   (testing "program 2 with HMC sampling"
     (println "running program 2 with HMC sampling")
-    (let [reference (anglican-query :lmh anglican-p2 number-of-samples
+    (let [reference (anglican-query :smc anglican-p2 number-of-samples
+                                    :number-of-particles 10000
                                     :burn-in burn-in)
           result (angler-query :hmc p2 number-of-samples :burn-in burn-in)
           r-slope-mean (mean (map first reference))
@@ -246,7 +253,8 @@
 (deftest hmc-program-3
   (testing "program 3 with HMC sampling"
     (println "running program 3 with HMC sampling")
-    (let [reference (anglican-query :lmh anglican-hmc-p3 number-of-samples
+    (let [reference (anglican-query :smc anglican-hmc-p3 number-of-samples
+                                    :number-of-particles 10000
                                     :burn-in burn-in)
           result (angler-query :hmc hmc-p3 number-of-samples :burn-in burn-in)
           r-x-mean (mean (map first reference))
@@ -270,7 +278,8 @@
 (deftest interp-program-1
   (testing "program 1 with likelihood weighting interpreter"
     (println "running program 1 likelihood weighting interpreter")
-    (let [reference (anglican-query :lmh anglican-p1 number-of-samples
+    (let [reference (anglican-query :smc anglican-p1 number-of-samples
+                                    :number-of-particles 10000
                                     :burn-in burn-in)
           result (take number-of-samples (map first
                                               (interp :imh p1
