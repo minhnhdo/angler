@@ -152,7 +152,8 @@
                                  0
                                  P)))
         U-func (binding [*ns* (in-ns 'angler.primitives)] (eval U))]
-    (hmc-infinite-sequence U U-func chi t epsilon stddev normal-dist)))
+    (map #(into % Y)
+         (hmc-infinite-sequence U U-func chi t epsilon stddev normal-dist))))
 
 (def ^:private query-algorithms
   {:gibbs gibbs
