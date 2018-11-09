@@ -8,6 +8,7 @@
             [angler.passes.desugar :refer [desugar]]
             [angler.passes.scope :refer [scope]]
             [angler.passes.validate :refer [validate]]
+            angler.primitives
             [angler.types :refer [ancestral-ordering bind-free-variables
                                   free-vars peval sample-from-prior]])
   (:import [angler.types Graph]
@@ -56,7 +57,7 @@
                                  vars (disj (free-vars {} e) x)
                                  args (vec (filter vars ordering))]
                              [x [args
-                                 (binding [*ns* (in-ns 'angler.primitives)]
+                                 (binding [*ns* (the-ns 'angler.primitives)]
                                    (eval (list 'fn args
                                                (bind-free-variables Y e))))]])
                           P))
@@ -151,7 +152,7 @@
                                          acc))
                                  0
                                  P)))
-        U-func (binding [*ns* (in-ns 'angler.primitives)] (eval U))]
+        U-func (binding [*ns* (the-ns 'angler.primitives)] (eval U))]
     (map #(into % Y)
          (hmc-infinite-sequence U U-func chi t epsilon stddev normal-dist))))
 

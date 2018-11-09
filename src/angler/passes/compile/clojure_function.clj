@@ -1,4 +1,5 @@
 (ns angler.passes.compile.clojure-function
+  (:require angler.primitives)
   (:import [clojure.lang IPersistentMap IPersistentVector Symbol]))
 
 (declare compile-expression)
@@ -38,6 +39,6 @@
                             (pop program)))
         expr (peek program)
         log-weight-atom (gensym "log-weight-")]
-    (binding [*ns* (in-ns 'angler.primitives)]
+    (binding [*ns* (the-ns 'angler.primitives)]
       (eval (list 'fn [log-weight-atom]
                   (compile-expression log-weight-atom defns expr))))))
