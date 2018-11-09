@@ -26,7 +26,7 @@
     (cond
       (seq errors) (validate-error
                      (string/join \newline (map :angler.errors/message errors)))
-      (= 'let op) (let [[bindings & body] validated-params]
+      (= 'let op) (let [[bindings] validated-params]
                     (checks
                       [(vector? bindings)
                        (validate-error
@@ -40,17 +40,15 @@
                             (map #(vector (validate-identifier (nth % 0))
                                           (validate-expression (nth % 1)))
                                  (partition 2 bindings))
-                            validated-body (map validate-expression body)
                             errors (filter
                                      :angler.errors/error
-                                     (into (vec (flatten validated-bindings))
-                                           validated-body))]
+                                     (flatten validated-bindings))]
                         (if (empty? errors)
                           ast
                           (validate-error
                             (string/join
                               \newline (map :angler.errors/message errors)))))))
-      (= 'foreach op) (let [[c bindings & body] validated-params]
+      (= 'foreach op) (let [[c bindings] validated-params]
                         (checks
                           [(and (int? c) (> c 0))
                            (validate-error
@@ -71,12 +69,9 @@
                                         (validate-identifier (nth % 0))
                                         (validate-expression (nth % 1)))
                                      (partition 2 bindings))
-                                validated-body
-                                (map validate-expression body)
                                 errors (filter
                                          :angler.errors/error
-                                         (into (vec (flatten validated-bindings))
-                                               validated-body))]
+                                         (flatten validated-bindings))]
                             (if (empty? errors)
                               ast
                               (validate-error

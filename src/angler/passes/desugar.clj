@@ -54,17 +54,16 @@
 
 (defn- desugar-list
   [e]
-  (let [[op & params] e
-        desugared-params (map desugar-expression params)]
+  (let [[op & params] e]
     (cond
-      (= 'if op) (let [[cond-exp then-exp else-exp] desugared-params]
+      (= 'if op) (let [[cond-exp then-exp else-exp] (map desugar-expression params)]
                    ;; the above explicit binding is to handle if expressions
                    ;; with missing else and then branches
                    (list 'if cond-exp then-exp else-exp))
       (= 'let op) (desugar-let e)
       (= 'foreach op) (desugar-foreach e)
       (= 'loop op) (desugar-loop e)
-      :else (apply list op desugared-params))))
+      :else (apply list op (map desugar-expression params)))))
 
 (defn- desugar-expression
   [e]
